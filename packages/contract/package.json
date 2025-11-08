@@ -1,8 +1,22 @@
 {
   "name": "contract",
   "version": "1.0.0",
-  "scripts": {
-  },
   "author": "imbatman@iusevimbtw.com",
-  "license": "ISC"
+  "license": "ISC",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "contract:compile": "compact compile src/compact/kyc.compact src/generated",
+    "build": "pnpm contract:compile && bunchee"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "^0.9.0"
+  },
+  "devDependencies": {
+    "bunchee": "^6.6.2"
+  }
 }
