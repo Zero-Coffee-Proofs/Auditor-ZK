@@ -1,5 +1,7 @@
 Build / lint / test
 
+YOU ARE NOT ALLOWED TO COMMIT ANYTHING NOR PUSH NOR PULL
+
 - Install: pnpm install (repo uses pnpm workspace)
 - Dev (web): cd apps/web && pnpm run dev
 - Build (all): pnpm run build # runs turbo tasks from root

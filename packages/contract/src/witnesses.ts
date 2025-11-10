@@ -1,19 +1,31 @@
-import { Ledger } from "./generated/contract/index.cjs";
 import { WitnessContext } from "@midnight-ntwrk/compact-runtime";
+import { Ledger } from "./generated/contract/index.cjs";
 
 export type KYCPrivateState = {
-  readonly secretKey: Uint8Array;
+  readonly secret_key: Uint8Array;
+  readonly salt: Uint8Array;
 };
 
-export const createKYCPrivateState = (secretKey: Uint8Array) => ({
-  secretKey,
-});
-
+export const createKYCPrivateState = (
+  secretKey: Uint8Array,
+  salt: Uint8Array,
+) => {
+  return {
+    secret_key: secretKey,
+    salt,
+  };
+};
 export const witnesses = {
-  localSecretKey: ({
+  secret_key: ({
     privateState,
   }: WitnessContext<Ledger, KYCPrivateState>): [
       KYCPrivateState,
       Uint8Array,
-    ] => [privateState, privateState.secretKey],
+    ] => [privateState, privateState.secret_key],
+  salt: ({
+    privateState,
+  }: WitnessContext<Ledger, KYCPrivateState>): [
+      KYCPrivateState,
+      Uint8Array,
+    ] => [privateState, privateState.salt],
 };

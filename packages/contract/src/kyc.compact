@@ -1,0 +1,97 @@
+pragma language_version >= 0.18;
+
+import CompactStandardLibrary;
+
+// PRIVATE STATE
+witness secret_key(): Bytes<32>;
+witness salt(): Bytes<32>;
+
+export struct AssertionInput {
+  income: Uint<64>;
+  debtToIncomeRatio: Uint<64>;
+  outstandingDebt: Uint<64>;
+  minBalance: Uint<64>;
+  age: Uint<64>;
+  kyc: Uint<1>;
+}
+
+/**
+ * Example of rule to create
+ *
+ * “This borrower has passed Blockpass KYC and has verified monthly income > $2,000 and 
+ * debt-to-income ratio < 40% — without revealing any sensitive info.”
+ */
+export struct Assertion {
+  /** the version of the rules this assertion is based on */
+  version: Uint<64>;
+  /** monthly income >= than rule.monthlyIncome */
+  income: Uint<1>;
+  /** debt-to-income ratio <= rule.maxDebtToIncomeRatio */
+  debtToIncomeRatio: Uint<1>;
+  /** outstanding debt <= rule.maxDebt */
+  outstandingDebt: Uint<1>;
+  /** total balance >= rule.minBalance */
+  minBalance: Uint<1>;
+  /** age >= rule.minAge */
+  age: Uint<1>;
+  /** compliant kyc */
+  kyc: Uint<1>;
+}
+
+// TODO: add a HashMap for RuleSet by hash to allow creators of multiple rule sets
+
+/** Loan rules */
+export struct RuleSet {
+  // when rules are updated, increment version
+  // TODO: figure out why I couldn't use Counter here
+  version: Uint<64>;
+  monthlyIncome: Uint<64>;
+  // Number between 0 and 100 representing percentage without decimal points
+  debtToIncomeRatio: Uint<64>;
+  outstandingDebt: Uint<64>;
+  minBalance: Uint<64>;
+  minAge: Uint<64>;
+}
+
+export ledger owner: Bytes<32>;
+export ledger rules: RuleSet;
+export ledger assertions: Map<Bytes<32>, Assertion>;
+
+export circuit updateRules(newRules: RuleSet): [] {
+  const caller = disclose(nullify(secret_key(), salt()));
+  //assert(owner == caller, "You shall not pass");
+  // TODO: add guard against overflow
+  rules = disclose(newRules);
+}
+
+export circuit addAssertion(
+ input: AssertionInput,
+): [] {
+  const user = nullify(secret_key(), salt());
+  const assertion = Assertion {
+    version: rules.version,
+    income: input.income >= rules.monthlyIncome ? 1 : 0, // if error comes up then cast it to Uint<1>
+    debtToIncomeRatio: input.debtToIncomeRatio <= rules.debtToIncomeRatio ? 1 : 0,
+    outstandingDebt: input.outstandingDebt <= rules.outstandingDebt ? 1 : 0,
+    minBalance: input.minBalance >= rules.minBalance ? 1 : 0,
+    age: input.age >= rules.minAge ? 1 : 0,
+    kyc: input.kyc,
+  };
+  assertions.insert(disclose(user), disclose(assertion));
+}
+
+constructor(
+  _rules: RuleSet,
+) {
+  owner = disclose(nullify(secret_key(), salt()));
+  rules = disclose(_rules);
+}
+
+// TODO: fix this. it's copied from the previous hackathon
+export circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pk"), sk]);
+}
+
+export circuit nullify(sk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "pk"), sk, salt]);
+}
