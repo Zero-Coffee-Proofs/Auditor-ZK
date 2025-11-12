@@ -3,7 +3,8 @@
   "type": "module",
   "version": "1.0.0",
   "scripts": {
-    "dev": "tsx src/index.ts"
+    "deploy": "tsx src/deploy.ts",
+    "update-rules": "tsx src/update-rules.ts"
   },
   "author": "imbatman@iusevimbtw.com",
   "license": "ISC",

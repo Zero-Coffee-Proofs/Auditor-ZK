@@ -27,7 +27,7 @@ import type {
   Witnesses,
   Assertion,
   RuleSet,
-} from "contract-primitives";
+} from "contracts";
 
 export const contractPrivateStateKey = "contractPrivateState";
 export type PrivateStateId = typeof contractPrivateStateKey;
@@ -105,7 +105,7 @@ export function uint8arraytostring(array: Uint8Array): string {
   // If exactly 16 bytes, present as UUID (8-4-4-4-12) for readability.
   if (array.length === 16) {
     const hex = toHex(array);
-    return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   }
 
   return toHex(array);

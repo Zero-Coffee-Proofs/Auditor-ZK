@@ -28,7 +28,7 @@ import {
   Assertion,
   RuleSet,
   AssertionInput,
-} from 'contract-primitives';
+} from 'contracts';
 import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { type Logger } from 'pino';
 import {
