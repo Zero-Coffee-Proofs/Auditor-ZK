@@ -1,22 +1,22 @@
 # Main Entities
 
-## Issuer
+### Issuer
 An individual or organization that owns a real-world asset and wants to tokenize a portion of its reserves.
 
-## Trader
+### Trader
 Anyone who wants to purchase tokenized real-world assets.
 
-## Proof
+### Proof
 A verifiable zero-knowledge statement about the issuer’s reserves. The proof can originate from various systems, such as:
 
 - a centralized bank account
 - a blockchain address
 - any acceptable Source of Truth (SoT)
 
-## Source of Truth (SoT)
+### Source of Truth (SoT)
 The authenticated system from which the issuer obtains the reserve data used to generate a proof.
 
-## Payment Token (PT)
+### Payment Token (PT)
 Any supported token on the Midnight blockchain used to pay for RWA-backed tokens during trading.
 
 # Use Case: Issuer Tokenizes a Real-World Asset
