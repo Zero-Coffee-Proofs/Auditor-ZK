@@ -1,0 +1,249 @@
+pragma language_version >= 0.18;
+
+import CompactStandardLibrary;
+import "./oz/access/Ownable" prefix Ownable_;
+
+/*
+    ================================
+    PROOF OF RESERVES TOKEN CONTRACT
+    ================================
+
+    This contract implements a tokenized asset backed by cryptographic proof of reserves
+    using TLSNotary attestations. The contract ensures that tokens can only be minted once,
+    and only after proving knowledge of reserves that meet a minimum threshold.
+
+    ARCHITECTURE:
+    1. Owner (AuditorZK) submits proof of reserves commitment from TLSNotary verifier
+    2. User proves knowledge of balance matching the commitment in zero-knowledge
+    3. User mints tokens (one-time operation) if balance >= threshold >= amountToMint
+
+    PRIVACY GUARANTEES:
+    - User's exact balance is NEVER revealed on-chain
+    - Only the commitment hash and threshold are public
+    - ZK circuit proves balance > threshold without disclosing the actual amount
+*/
+
+///////////////////
+// PRIVATE STATE //
+///////////////////
+
+// Witnesses used for identity management and nullifier creation
+witness secret_key(): Bytes<32>;
+witness salt(): Bytes<32>;
+
+//////////////////
+// PUBLIC STATE //
+//////////////////
+
+// Proof of reserves submitted by the contract owner (AuditorZK)
+export struct ProofOfReserves {
+  commitment: Bytes<32>;      // hash(balance || blinder) from TLSNotary attestation
+  timestamp: Uint<64>;         // Unix timestamp when proof was submitted
+  threshold: Uint<64>;         // Minimum balance required for minting (in cents)
+}
+
+// Token metadata and supply tracking
+export struct TokenInfo {
+  name: Bytes<64>;             // Token name (e.g., "ProvedUSDC")
+  totalSupply: Uint<64>;       // Total number of tokens minted
+}
+
+// Ledger state
+// Note: Ownable module provides: export ledger _owner: Either<ZswapCoinPublicKey, ContractAddress>
+export ledger tokenInfo: TokenInfo;
+export ledger proofOfReserves: ProofOfReserves;
+export ledger minted: Uint<1>;                     // 0 = not minted, 1 = tokens have been minted
+export ledger balances: Map<Bytes<32>, Uint<64>>; // Nullifier -> token balance (privacy-preserving)
+
+/*
+    CONSTRUCTOR
+
+    Initializes the contract with:
+    - Owner (AuditorZK) who can submit proofs
+    - Token name
+    - Empty proof of reserves (threshold = 0 initially)
+
+    @param _owner - The AuditorZK public key (can submit proofs)
+    @param _tokenName - The name of the token (padded to 64 bytes)
+*/
+constructor(
+  _owner: ZswapCoinPublicKey,
+  _tokenName: Bytes<64>
+) {
+  // Initialize Ownable module with the AuditorZK owner
+  Ownable_initialize(disclose(left<ZswapCoinPublicKey, ContractAddress>(_owner)));
+
+  // Initialize token metadata
+  tokenInfo = disclose(TokenInfo {
+    name: _tokenName,
+    totalSupply: 0
+  });
+
+  // Initialize empty proof of reserves (threshold starts at 0)
+  proofOfReserves = disclose(ProofOfReserves {
+    commitment: pad(32, ""),
+    timestamp: 0,
+    threshold: 0
+  });
+
+  // Token not yet minted
+  minted = disclose(0);
+}
+
+/*
+    SUBMIT PROOF OF RESERVES
+
+    Called by the contract owner (AuditorZK) to update the proof of reserves.
+    This submits the commitment hash created by the TLSNotary verifier server.
+
+    OWNER ONLY - Uses OpenZeppelin Ownable access control
+
+    @param commitment - hash(balance || blinder) from TLSNotary attestation
+    @param timestamp - Unix timestamp when the proof was created
+    @param threshold - Minimum balance required for minting (in cents, e.g., 1000000 = $10,000)
+*/
+export circuit submitProof(
+  commitment: Bytes<32>,
+  timestamp: Uint<64>,
+  threshold: Uint<64>
+): [] {
+  // Only the contract owner can submit proofs
+  Ownable_assertOnlyOwner();
+
+  // Update the global proof of reserves
+  proofOfReserves = disclose(ProofOfReserves {
+    commitment: commitment,
+    timestamp: timestamp,
+    threshold: threshold
+  });
+}
+
+/*
+    MINT TOKENS
+
+    Allows a user to mint tokens by proving they know the balance and blinder
+    that match the committed proof of reserves.
+
+    ONE-TIME OPERATION - Once tokens are minted, this circuit cannot be called again.
+
+    PRIVACY: The user's actual balance is kept private. The circuit proves in zero-knowledge:
+    1. User knows balance and blinder such that hash(balance || blinder) == commitment
+    2. balance >= threshold (meets minimum reserve requirement)
+    3. threshold >= amountToMint (minting amount is within limits)
+
+    @param balance - PRIVATE: User's actual balance in cents (e.g., 2091275 = $20,912.75)
+    @param blinder - PRIVATE: Blinding factor from MPC protocol (32 bytes)
+    @param amountToMint - PUBLIC: Number of tokens to mint
+*/
+export circuit mint(
+  balance: Uint<64>,          // PRIVATE witness
+  blinder: Bytes<32>,         // PRIVATE witness
+  amountToMint: Uint<64>      // PUBLIC input
+): [] {
+  // Ensure tokens have not been minted yet
+  assert(minted == 0, "Tokens already minted - only one-time minting allowed");
+
+  // Verify knowledge of commitment preimage
+  // Reconstruct: commitment = hash(balanceBytes || blinder)
+  // Note: persistentHash outputs 32 bytes (SHA256 hash)
+  const balanceValue = (balance as Field) as Bytes<32>;
+  const computedCommitment = persistentHash<Vector<2, Bytes<32>>>([balanceValue, blinder]);
+
+  assert(computedCommitment == proofOfReserves.commitment,
+         "Invalid commitment: provided balance and blinder do not match");
+
+  // Verify balance constraints:
+  // 1. User's balance >= threshold (meets minimum reserves)
+  // 2. threshold >= amountToMint (minting within allowed limits)
+  assert(balance >= proofOfReserves.threshold,
+         "Balance below required threshold - insufficient reserves");
+  assert(proofOfReserves.threshold >= amountToMint,
+         "Mint amount exceeds threshold - cannot mint more than threshold allows");
+
+  // Mint tokens to user's nullifier (privacy-preserving)
+  // User proves knowledge of secret_key and salt to create nullifier
+  const userNullifier = nullify(secret_key(), salt());
+  balances.insert(disclose(userNullifier), disclose(amountToMint));
+
+  // Update total supply
+  tokenInfo = disclose(TokenInfo {
+    name: tokenInfo.name,
+    totalSupply: amountToMint
+  });
+
+  // Mark as minted (prevents future minting)
+  minted = disclose(1);
+}
+
+///////////////////////////
+// TOKEN OPERATIONS (TODO)
+///////////////////////////
+
+// TODO: Implement transfer functionality
+// Transfer tokens between nullifiers (privacy-preserving)
+// export circuit transfer(toNullifier: Bytes<32>, amount: Uint<64>): [] {
+//   // Prove ownership of source nullifier
+//   const fromNullifier = nullify(secret_key(), salt());
+//
+//   const senderBalance = balances.member(fromNullifier) ? balances.lookup(fromNullifier) : 0;
+//   assert(senderBalance >= amount, "Insufficient balance for transfer");
+//
+//   // Deduct from sender's nullifier
+//   balances.update(fromNullifier, senderBalance - amount);
+//
+//   // Add to recipient's nullifier
+//   const recipientBalance = balances.member(toNullifier) ? balances.lookup(toNullifier) : 0;
+//   balances.upsert(toNullifier, recipientBalance + amount);
+// }
+
+// TODO: Implement burn functionality
+// Burn tokens from user's nullifier balance and reduce total supply
+// export circuit burn(amount: Uint<64>): [] {
+//   // Prove ownership of nullifier
+//   const userNullifier = nullify(secret_key(), salt());
+//
+//   const senderBalance = balances.member(userNullifier) ? balances.lookup(userNullifier) : 0;
+//   assert(senderBalance >= amount, "Insufficient balance to burn");
+//
+//   // Deduct from user's nullifier
+//   balances.update(userNullifier, senderBalance - amount);
+//
+//   // Reduce total supply
+//   tokenInfo.totalSupply = tokenInfo.totalSupply - amount;
+// }
+
+// TODO: Implement balance query
+// View the token balance for a given nullifier
+// export circuit balanceOf(nullifier: Bytes<32>): Uint<64> {
+//   return balances.member(nullifier) ? balances.lookup(nullifier) : 0;
+// }
+
+////////////////////
+// HELPER FUNCTIONS
+////////////////////
+
+/*
+    PUBLIC KEY DERIVATION
+
+    Derives a public key from a secret key using a persistent hash.
+
+    @param sk - Secret key (32 bytes)
+    @returns Public key (32 bytes)
+*/
+export circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "pk"), sk]);
+}
+
+/*
+    NULLIFIER GENERATION
+
+    Creates a deterministic nullifier from a secret key and salt.
+    Used for privacy-preserving identity management.
+
+    @param sk - Secret key (32 bytes)
+    @param salt - Salt value (32 bytes)
+    @returns Nullifier (32 bytes)
+*/
+export circuit nullify(sk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "pk"), sk, salt]);
+}

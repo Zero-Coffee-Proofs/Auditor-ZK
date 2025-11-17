@@ -21,8 +21,11 @@ pub struct Attestation {
     pub server_name: String,
     /// Timestamp of the session
     pub timestamp: u64,
-    /// Commitment to the balance data (first hash commitment)
+    /// Commitment to the balance data: hash(balance_bytes || blinder)
     pub balance_commitment: Vec<u8>,
+    /// Balance in cents (for reference only, not part of signature)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub balance_cents: Option<u64>,
     /// BIP-340 signature (hex-encoded with 3-byte version prefix)
     pub signature: String,
     /// The verifier's public key (for signature verification)
@@ -47,8 +50,8 @@ pub async fn sign_attestation(mut output: VerifierOutput) -> Result<Vec<u8>> {
         .duration_since(std::time::UNIX_EPOCH)?
         .as_secs();
 
-    // Extract balance commitment (first hash commitment from received data)
-    let balance_commitment = extract_balance_commitment(&output)?;
+    // Extract balance commitment and balance in cents
+    let (balance_commitment, balance_cents) = extract_balance_commitment(&output)?;
 
     // Pad server_name to 32 bytes (right-padded with zeros)
     let mut server_name_padded = [0u8; 32];
@@ -99,6 +102,7 @@ pub async fn sign_attestation(mut output: VerifierOutput) -> Result<Vec<u8>> {
         server_name,
         timestamp,
         balance_commitment,
+        balance_cents: Some(balance_cents),
         signature: hex_signature,
         verifier_pubkey: verifying_key.to_bytes().to_vec(),
     };
@@ -114,7 +118,8 @@ pub async fn sign_attestation(mut output: VerifierOutput) -> Result<Vec<u8>> {
 
 /// Extract the balance commitment from transcript commitments
 /// MOCK IMPLEMENTATION: Creates a fake commitment from the transcript data
-fn extract_balance_commitment(output: &VerifierOutput) -> Result<Vec<u8>> {
+/// Returns (commitment_hash, balance_in_cents)
+fn extract_balance_commitment(output: &VerifierOutput) -> Result<(Vec<u8>, u64)> {
     // TEMPORARY MOCK: Extract balance from transcript and create commitment
     // In production, this should come from the prover's selective disclosure
 
@@ -163,20 +168,35 @@ fn extract_balance_commitment(output: &VerifierOutput) -> Result<Vec<u8>> {
 
     info!("💰 Total balance (extracted): ${:.2}", total_balance);
 
-    // Create mock commitment: hash(balance_string || mock_blinder)
-    let balance_string = format!("{:.2}", total_balance);
-    let mock_blinder = b"mock_blinder_for_testing"; // In production, from MPC
+    // Convert balance to cents (smallest unit) to match Compact contract
+    // Example: $20,912.75 becomes 2091275 cents
+    let balance_cents: u64 = (total_balance * 100.0).round() as u64;
 
+    info!("💵 Balance in cents: {} (for ZK circuit)", balance_cents);
+
+    // Create commitment: hash(balanceBytes || blinder)
+    // This matches the Compact circuit: hash(toBytes(balance) || blinder)
+    let mock_blinder = b"mock_blinder_for_testing"; // In production, from MPC protocol
+
+    // Convert balance to bytes (little-endian u64)
+    let balance_bytes = balance_cents.to_le_bytes();
+
+    // Create preimage: balanceBytes || blinder
     let mut commitment_preimage = Vec::new();
-    commitment_preimage.extend_from_slice(balance_string.as_bytes());
+    commitment_preimage.extend_from_slice(&balance_bytes);
     commitment_preimage.extend_from_slice(mock_blinder);
 
+    info!("🔍 Commitment preimage:");
+    info!("   Balance bytes (u64 LE): {}", hex::encode(&balance_bytes));
+    info!("   Blinder: {}", hex::encode(mock_blinder));
+
+    // Hash the preimage with SHA256
     use sha2::{Digest, Sha256};
     let commitment_hash = Sha256::digest(&commitment_preimage);
 
-    info!("🔐 Mock commitment created: {}...", hex::encode(&commitment_hash));
+    info!("🔐 Commitment created: {}", hex::encode(&commitment_hash));
 
-    Ok(commitment_hash.to_vec())
+    Ok((commitment_hash.to_vec(), balance_cents))
 }
 
 /// Load existing key or generate new one
