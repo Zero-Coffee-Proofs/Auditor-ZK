@@ -10,13 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.2.3",
+    "@midnight-ntwrk/dapp-connector-api": "^3.0.0",
+    "@radix-ui/react-slot": "^1.2.4",
     "@tailwindcss/vite": "^4.1.12",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.541.0",
+    "pino": "^10.1.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "rxjs": "^7.8.2",
+    "semver": "^7.7.2",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
@@ -25,6 +29,7 @@
     "@types/node": "^24.3.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "@types/semver": "^7.7.1",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.33.0",
