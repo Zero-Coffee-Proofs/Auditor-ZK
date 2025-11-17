@@ -142,6 +142,37 @@
       }
     },
     {
+      "name": "hasheameloPapa",
+      "pure": true,
+      "arguments": [
+        {
+          "name": "serverName",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "timestamp",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
+    {
       "name": "nullify",
       "pure": true,
       "arguments": [

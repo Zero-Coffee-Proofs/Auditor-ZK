@@ -43,6 +43,7 @@ import {
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
 import { combineLatest, map, from, type Observable } from 'rxjs';
 import * as utils from './utils';
+import { fromHex } from '@midnight-ntwrk/midnight-js-utils';
 
 
 /** @internal */
@@ -118,6 +119,9 @@ export class ContractAPI implements DeployedContractAPI {
       minAge: 18n,
     };
 
+
+    console.log("Gettting private state")
+
     const initialPrivateState = await ContractAPI.getPrivateState(providers);
 
     const deployed = await deployContract(providers, {
@@ -150,13 +154,17 @@ export class ContractAPI implements DeployedContractAPI {
 
   private static async getPrivateState(providers: ContractProviders): Promise<KYCPrivateState> {
     // Try to reuse an existing persisted private state
-    const existingPrivateState = await providers.privateStateProvider.get(contractPrivateStateKey);
-    if (existingPrivateState != null) return existingPrivateState;
+    //const existingPrivateState = await providers.privateStateProvider.get(contractPrivateStateKey);
+    //console.log("PRivate state doesnt exist")
+    //if (existingPrivateState != null) return existingPrivateState;
 
     // For flexibility we generate a random salt here; callers could be extended to pass a salt as well.
-    const salt = utils.randomBytes(32);
+    //const salt = utils.randomBytes(32);
+    //console.log("Creating private state")
 
-    const newPrivateState = createKYCPrivateState(Buffer.from(providers.walletProvider.coinPublicKey), salt);
+    //console.log(fromHex(providers.walletProvider.coinPublicKey))
+    const newPrivateState = createKYCPrivateState(Buffer.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "hex"), Buffer.from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 'hex'));
+    console.log("New private state", newPrivateState)
 
     // Persist the private state so subsequent joins reuse it
     try {

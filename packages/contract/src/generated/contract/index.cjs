@@ -1,6 +1,6 @@
 'use strict';
 const __compactRuntime = require('@midnight-ntwrk/compact-runtime');
-const expectedRuntimeVersionString = '0.9.0';
+const expectedRuntimeVersionString = '0.8.1';
 const expectedRuntimeVersion = expectedRuntimeVersionString.split('-')[0].split('.').map(Number);
 const actualRuntimeVersion = __compactRuntime.versionString.split('-')[0].split('.').map(Number);
 if (expectedRuntimeVersion[0] != actualRuntimeVersion[0]
@@ -199,6 +199,9 @@ class Contract {
       },
       publicKey(context, ...args_1) {
         return { result: pureCircuits.publicKey(...args_1), context };
+      },
+      hasheameloPapa(context, ...args_1) {
+        return { result: pureCircuits.hasheameloPapa(...args_1), context };
       },
       nullify(context, ...args_1) {
         return { result: pureCircuits.nullify(...args_1), context };
@@ -502,6 +505,9 @@ class Contract {
     return this._persistentHash_0([new Uint8Array([112, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                    sk_0]);
   }
+  _hasheameloPapa_0(serverName_0, timestamp_0, commitment_0) {
+    return this._persistentHash_1([serverName_0, timestamp_0, commitment_0]);
+  }
   _nullify_0(sk_0, salt_0) {
     return this._persistentHash_1([new Uint8Array([112, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                    sk_0,
@@ -701,11 +707,43 @@ const pureCircuits = {
     if (!(sk_0.buffer instanceof ArrayBuffer && sk_0.BYTES_PER_ELEMENT === 1 && sk_0.length === 32)) {
       __compactRuntime.type_error('publicKey',
                                   'argument 1',
-                                  'kyc.compact line 91 char 1',
+                                  'kyc.compact line 90 char 1',
                                   'Bytes<32>',
                                   sk_0)
     }
     return _dummyContract._publicKey_0(sk_0);
+  },
+  hasheameloPapa: (...args_0) => {
+    if (args_0.length !== 3) {
+      throw new __compactRuntime.CompactError(`hasheameloPapa: expected 3 arguments (as invoked from Typescript), received ${args_0.length}`);
+    }
+    const serverName_0 = args_0[0];
+    const timestamp_0 = args_0[1];
+    const commitment_0 = args_0[2];
+    if (!(serverName_0.buffer instanceof ArrayBuffer && serverName_0.BYTES_PER_ELEMENT === 1 && serverName_0.length === 32)) {
+      __compactRuntime.type_error('hasheameloPapa',
+                                  'argument 1',
+                                  'kyc.compact line 95 char 1',
+                                  'Bytes<32>',
+                                  serverName_0)
+    }
+    if (!(timestamp_0.buffer instanceof ArrayBuffer && timestamp_0.BYTES_PER_ELEMENT === 1 && timestamp_0.length === 32)) {
+      __compactRuntime.type_error('hasheameloPapa',
+                                  'argument 2',
+                                  'kyc.compact line 95 char 1',
+                                  'Bytes<32>',
+                                  timestamp_0)
+    }
+    if (!(commitment_0.buffer instanceof ArrayBuffer && commitment_0.BYTES_PER_ELEMENT === 1 && commitment_0.length === 32)) {
+      __compactRuntime.type_error('hasheameloPapa',
+                                  'argument 3',
+                                  'kyc.compact line 95 char 1',
+                                  'Bytes<32>',
+                                  commitment_0)
+    }
+    return _dummyContract._hasheameloPapa_0(serverName_0,
+                                            timestamp_0,
+                                            commitment_0);
   },
   nullify: (...args_0) => {
     if (args_0.length !== 2) {
@@ -716,14 +754,14 @@ const pureCircuits = {
     if (!(sk_0.buffer instanceof ArrayBuffer && sk_0.BYTES_PER_ELEMENT === 1 && sk_0.length === 32)) {
       __compactRuntime.type_error('nullify',
                                   'argument 1',
-                                  'kyc.compact line 95 char 1',
+                                  'kyc.compact line 99 char 1',
                                   'Bytes<32>',
                                   sk_0)
     }
     if (!(salt_0.buffer instanceof ArrayBuffer && salt_0.BYTES_PER_ELEMENT === 1 && salt_0.length === 32)) {
       __compactRuntime.type_error('nullify',
                                   'argument 2',
-                                  'kyc.compact line 95 char 1',
+                                  'kyc.compact line 99 char 1',
                                   'Bytes<32>',
                                   salt_0)
     }

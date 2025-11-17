@@ -38,6 +38,9 @@ export type ImpureCircuits<T> = {
 
 export type PureCircuits = {
   publicKey(sk_0: Uint8Array): Uint8Array;
+  hasheameloPapa(serverName_0: Uint8Array,
+                 timestamp_0: Uint8Array,
+                 commitment_0: Uint8Array): Uint8Array;
   nullify(sk_0: Uint8Array, salt_0: Uint8Array): Uint8Array;
 }
 
@@ -46,6 +49,10 @@ export type Circuits<T> = {
   addAssertion(context: __compactRuntime.CircuitContext<T>,
                input_0: AssertionInput): __compactRuntime.CircuitResults<T, []>;
   publicKey(context: __compactRuntime.CircuitContext<T>, sk_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
+  hasheameloPapa(context: __compactRuntime.CircuitContext<T>,
+                 serverName_0: Uint8Array,
+                 timestamp_0: Uint8Array,
+                 commitment_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
   nullify(context: __compactRuntime.CircuitContext<T>,
           sk_0: Uint8Array,
           salt_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;

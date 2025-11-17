@@ -24,8 +24,8 @@ importers:
         specifier: ^0.7.0
         version: 0.7.0(rxjs@7.8.2)
       '@midnight-ntwrk/compact-runtime':
-        specifier: 0.9.0
-        version: 0.9.0
+        specifier: 0.8.1
+        version: 0.8.1
       '@midnight-ntwrk/dapp-connector-api':
         specifier: ^3.0.0
         version: 3.0.0(rxjs@7.8.2)
@@ -270,8 +270,8 @@ importers:
   packages/contract:
     dependencies:
       '@midnight-ntwrk/compact-runtime':
-        specifier: 0.9.0
-        version: 0.9.0
+        specifier: 0.8.1
+        version: 0.8.1
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -328,8 +328,8 @@ importers:
   packages/sdk:
     dependencies:
       '@midnight-ntwrk/compact-runtime':
-        specifier: 0.9.0
-        version: 0.9.0
+        specifier: 0.8.1
+        version: 0.8.1
       '@midnight-ntwrk/ledger':
         specifier: ^4.0.0
         version: 4.0.0
@@ -825,8 +825,8 @@ packages:
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
 
-  '@midnight-ntwrk/compact-runtime@0.9.0':
-    resolution: {integrity: sha512-Dsms+SWRWlaTIay4SO7ITxTJvo8lgEKkMss+dQnIZDnEoCEO5lHTSj4TckBAvyYSWm4KElN3tir/MVm5hHgfDA==}
+  '@midnight-ntwrk/compact-runtime@0.8.1':
+    resolution: {integrity: sha512-ZXG/iprEqTCxQC/P1oETGOR5CnsoemPsfb17eSANPRsm+11AcIOP0Tp8KJipN+GbycgxOA+fAVwLFqA1hDCgbw==}
 
   '@midnight-ntwrk/dapp-connector-api@3.0.0':
     resolution: {integrity: sha512-A/AhsNjibrOSaUiPhQhxANeW9178uYnzeBFBf30YCvyvWg0YWCbhQfc7dRpiL7iBoX3Sxt9mtf+Svx4ZygLajg==}
@@ -5095,7 +5095,7 @@ snapshots:
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
-  '@midnight-ntwrk/compact-runtime@0.9.0':
+  '@midnight-ntwrk/compact-runtime@0.8.1':
     dependencies:
       '@midnight-ntwrk/onchain-runtime': 0.3.0
       '@types/object-inspect': 1.13.0

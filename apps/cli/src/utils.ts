@@ -127,6 +127,7 @@ export async function buildWalletFromSeed(
   logger.info(`Your wallet seed is: ${seed}`);
   logger.info(`Your wallet address is: ${state.address}`);
   let balance = state.balances[nativeToken()];
+
   if (balance === undefined || balance === 0n) {
     logger.info(`Your wallet balance is: 0`);
     logger.info(`Waiting to receive tokens...`);
