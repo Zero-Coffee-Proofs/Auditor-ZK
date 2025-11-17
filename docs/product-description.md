@@ -9,7 +9,7 @@ One major issue is custody risk: custodians can mismanage or misreport the asset
 ## Product
 Auditor ZK is a platform that allows the creation and trading of RWA-backed tokens. The mentioned issue that comes with tokenization is mitigated by the platform by enabling anyone to tokenize any RWA as long as they can provide a proof of ownership of the reserves. Using TLSNotary, a communication protocol based on TLS, an organization can generate proof of its financial reserves without revealing the exact balances. Afterwards, this proof will be used in a smart contract to validate the tokenization. Regarding the other issue, related to the limitations on who can access these tokens, the platform will allow anyone to purchase the tokens from the supplier.
 
-# Roadmap ahead
+## Roadmap ahead
 The plan for the product's initial version is to provide a couple of simple and concrete features with the goal of enforcing safety and ensuring privacy.
 
 The first improvement plan is to add two main features: an order book and an oracle.
