@@ -1,0 +1,35 @@
+{
+  "name": "auditor-zk-prover-client",
+  "version": "0.1.0",
+  "description": "AuditorZK Prover Client - Browser-based TLSNotary prover for proof of reserves",
+  "scripts": {
+    "start": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development --open"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3",
+    "comlink": "^4.4.1",
+    "http-parser-js": "^0.5.8",
+    "process": "^0.11.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tlsn-js": "0.1.0-alpha.12.0",
+    "tlsn-wasm": "0.1.0-alpha.12"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "copy-webpack-plugin": "^13.0.1",
+    "css-loader": "^6.8.1",
+    "dotenv-webpack": "^8.1.1",
+    "html-webpack-plugin": "^5.6.0",
+    "style-loader": "^3.3.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1"
+  }
+}
