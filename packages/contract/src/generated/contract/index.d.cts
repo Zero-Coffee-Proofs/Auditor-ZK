@@ -21,6 +21,9 @@ export type ImpureCircuits<T> = {
        balance_0: bigint,
        blinder_0: Uint8Array,
        amountToMint_0: bigint): __compactRuntime.CircuitResults<T, []>;
+  transfer(context: __compactRuntime.CircuitContext<T>,
+           toNullifier_0: Uint8Array,
+           amount_0: bigint): __compactRuntime.CircuitResults<T, []>;
 }
 
 export type PureCircuits = {
@@ -37,6 +40,9 @@ export type Circuits<T> = {
        balance_0: bigint,
        blinder_0: Uint8Array,
        amountToMint_0: bigint): __compactRuntime.CircuitResults<T, []>;
+  transfer(context: __compactRuntime.CircuitContext<T>,
+           toNullifier_0: Uint8Array,
+           amount_0: bigint): __compactRuntime.CircuitResults<T, []>;
   publicKey(context: __compactRuntime.CircuitContext<T>, sk_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
   nullify(context: __compactRuntime.CircuitContext<T>,
           sk_0: Uint8Array,

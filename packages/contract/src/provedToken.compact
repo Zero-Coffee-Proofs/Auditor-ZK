@@ -179,22 +179,48 @@ export circuit mint(
 // TOKEN OPERATIONS (TODO)
 ///////////////////////////
 
-// TODO: Implement transfer functionality
-// Transfer tokens between nullifiers (privacy-preserving)
-// export circuit transfer(toNullifier: Bytes<32>, amount: Uint<64>): [] {
-//   // Prove ownership of source nullifier
-//   const fromNullifier = nullify(secret_key(), salt());
-//
-//   const senderBalance = balances.member(fromNullifier) ? balances.lookup(fromNullifier) : 0;
-//   assert(senderBalance >= amount, "Insufficient balance for transfer");
-//
-//   // Deduct from sender's nullifier
-//   balances.update(fromNullifier, senderBalance - amount);
-//
-//   // Add to recipient's nullifier
-//   const recipientBalance = balances.member(toNullifier) ? balances.lookup(toNullifier) : 0;
-//   balances.upsert(toNullifier, recipientBalance + amount);
-// }
+/*
+    TRANSFER TOKENS
+
+    Transfer tokens from sender's nullifier to recipient's nullifier.
+    Sender proves ownership by providing secret_key and salt that generate their nullifier.
+
+    PRIVACY: Sender proves knowledge of their nullifier without revealing identity.
+    Recipient receives tokens at their nullifier address.
+
+    @param toNullifier - Recipient's nullifier (destination)
+    @param amount - Amount of tokens to transfer
+*/
+export circuit transfer(toNullifier: Bytes<32>, amount: Uint<64>): [] {
+  // Prove ownership of source nullifier
+  // User must provide secret_key and salt as witnesses
+  const fromNullifier = disclose(nullify(secret_key(), salt()));
+
+  // Disclose transfer parameters (transfers are public operations)
+  const toNullifierD = disclose(toNullifier);
+  const amountD = disclose(amount);
+
+  // Check sender has sufficient balance
+  const senderBalance = balances.member(fromNullifier) ? balances.lookup(fromNullifier) : (0 as Uint<64>);
+  assert(senderBalance >= amountD, "Insufficient balance for transfer");
+
+  // Deduct from sender's nullifier
+  const newSenderBalance = (senderBalance - amountD) as Uint<64>;
+  balances.remove(fromNullifier);
+  if (newSenderBalance > 0) {
+    balances.insert(fromNullifier, newSenderBalance);
+  }
+  // If balance is zero, we just removed it (storage cleanup)
+
+  // Add to recipient's nullifier
+  const recipientBalance = balances.member(toNullifierD) ? balances.lookup(toNullifierD) : (0 as Uint<64>);
+  const newRecipientBalance = (recipientBalance + amountD) as Uint<64>;
+
+  if (balances.member(toNullifierD)) {
+    balances.remove(toNullifierD);
+  }
+  balances.insert(toNullifierD, newRecipientBalance);
+}
 
 // TODO: Implement burn functionality
 // Burn tokens from user's nullifier balance and reduce total supply
