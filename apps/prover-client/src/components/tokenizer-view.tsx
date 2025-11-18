@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { saveTokenizerSession } from '@/lib/tokenizer-session'
+import { usePlaidLink } from 'react-plaid-link'
 
 const PAYMENT_OPTIONS = [
   { id: 'usd', name: 'USD (via Plaid)', icon: '$', enabled: true },
@@ -16,6 +18,8 @@ const PAYMENT_OPTIONS = [
   { id: 'usdt', name: 'USDT', icon: '$', enabled: false },
 ]
 
+const BACKEND_URL = 'http://localhost:8080';
+
 export function TokenizerView() {
   const [assetName, setAssetName] = useState('')
   const [assetValue, setAssetValue] = useState('')
@@ -24,26 +28,94 @@ export function TokenizerView() {
   const [target, setTarget] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+
+  // exchange public token for access token
+  const onPlaidSuccess = async (public_token: string) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/exchange_public_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_token })
+      });
+      const data = await response.json();
+      if (!data.access_token) {
+        throw new Error('Missing access token in Plaid exchange response');
+      }
+
+  console.log('Access token received:', data.access_token);
+
+      saveTokenizerSession({
+        accessToken: data.access_token,
+        assetName,
+        assetValue,
+        tokenSupply,
+        description,
+        target,
+        createdAt: new Date().toISOString(),
+      });
+
+      setIsSubmitting(false);
+      setShowSuccess(true);
+
+      // Redirect into verifier workflow with isolated headers
+      window.location.assign('/verify');
+    } catch (error) {
+      console.error('Error exchanging token:', error);
+      setIsSubmitting(false);
+    }
+  };
+
+  // Root-level hook: initialize with current token and auto-open when ready
+  const { open, ready, error } = usePlaidLink({
+    token: linkToken,
+    onSuccess: onPlaidSuccess,
+  });
+
+  useEffect(() => {
+    console.log('Plaid root hook -> ready:', ready, 'linkToken present:', !!linkToken, 'error:', error);
+    if (ready && linkToken) {
+      try {
+        open();
+      } catch (err) {
+        console.error('Plaid open() threw:', err);
+      }
+    }
+  }, [ready, linkToken, open, error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    try {
+      if (target === 'usd') {
+        // Create link token first
+        console.log("Creating link token for plaid")
+        const response = await fetch(`${BACKEND_URL}/api/create_link_token`, {
+          method: 'POST'
+        });
+        const data = await response.json();
+        console.log("Link token received:", data.link_token);
+        setLinkToken(data.link_token);
+      } else {
+        // For other payment methods (when enabled)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setIsSubmitting(false);
+        setShowSuccess(true);
 
-    setIsSubmitting(false)
-    setShowSuccess(true)
-
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setShowSuccess(false)
-      setAssetName('')
-      setAssetValue('')
-      setTokenSupply('')
-      setDescription('')
-      setTarget('')
-    }, 3000)
+        setTimeout(() => {
+          setShowSuccess(false);
+          setAssetName('');
+          setAssetValue('');
+          setTokenSupply('');
+          setDescription('');
+          setTarget('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error initiating tokenization:', error);
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -164,6 +236,8 @@ export function TokenizerView() {
               'Tokenize Asset'
             )}
           </Button>
+          {/* Plaid opens automatically when ready via useEffect */}
+
         </form>
       </CardContent>
     </Card>

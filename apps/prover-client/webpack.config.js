@@ -5,10 +5,14 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 
 module.exports = {
-  entry: './src/app.tsx',
+  entry: {
+    main: './src/main.tsx',
+    verify: './src/verify.tsx',
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    filename: '[name].[contenthash].js',
+    chunkFilename: '[name].[contenthash].js',
     clean: true,
     publicPath: '/',
   },
@@ -21,7 +25,21 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  '@tailwindcss/postcss',
+                  'autoprefixer',
+                ],
+              },
+            },
+          },
+        ],
       },
       {
         test: /\.worker\.ts$/,
@@ -36,10 +54,14 @@ module.exports = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
     fallback: {
       crypto: false,
       stream: false,
       buffer: require.resolve('buffer/'),
+      process: require.resolve('process/browser'),
     },
   },
   plugins: [
@@ -48,6 +70,13 @@ module.exports = {
     }),
     new HtmlWebpackPlugin({
       template: './src/index.html',
+      chunks: ['main'],
+      filename: 'index.html',
+    }),
+    new HtmlWebpackPlugin({
+      template: './src/verify.html',
+      chunks: ['verify'],
+      filename: 'verify.html',
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -63,9 +92,7 @@ module.exports = {
       ],
     }),
     new webpack.ProvidePlugin({
-      process: 'process/browser',
-    }),
-    new webpack.ProvidePlugin({
+      process: require.resolve('process/browser'),
       Buffer: ['buffer', 'Buffer'],
     }),
   ],
@@ -75,15 +102,38 @@ module.exports = {
     },
     compress: true,
     port: 3000,
-    hot: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
+    hot: true,   
     historyApiFallback: {
       // disableDotRule: true means files with dots (extensions) won't be caught
       // This allows .wasm files to be served directly by webpack-dev-server
       disableDotRule: true,
+      rewrites: [
+        { from: /^\/verify$/, to: '/verify.html' },
+        { from: /^\/verify\/$/, to: '/verify.html' },
+      ],
+    },
+    setupMiddlewares: (middlewares, devServer) => {
+      if (!devServer) {
+        throw new Error('webpack-dev-server is not defined');
+      }
+
+      devServer.app?.use((req, res, next) => {
+        const pathToCheck = req.path || '';
+        const referer = req.headers.referer || req.headers.referrer || '';
+        const needsIsolation =
+          pathToCheck === '/verify' ||
+          pathToCheck === '/verify/' ||
+          pathToCheck === '/verify.html' ||
+          (typeof referer === 'string' && referer.includes('/verify'));
+
+        if (needsIsolation) {
+          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+        }
+        next();
+      });
+
+      return middlewares;
     },
   },
   devtool: 'source-map',
