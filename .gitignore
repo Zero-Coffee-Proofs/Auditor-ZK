@@ -28,3 +28,7 @@ yarn-error.log*
 dist
 
 target
+
+midnight-level-db
+
+generated

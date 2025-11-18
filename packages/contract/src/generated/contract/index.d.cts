@@ -24,6 +24,9 @@ export type ImpureCircuits<T> = {
   transfer(context: __compactRuntime.CircuitContext<T>,
            toNullifier_0: Uint8Array,
            amount_0: bigint): __compactRuntime.CircuitResults<T, []>;
+  buy(context: __compactRuntime.CircuitContext<T>,
+      amountToBuy_0: bigint,
+      payment_0: { nonce: Uint8Array, color: Uint8Array, value: bigint }): __compactRuntime.CircuitResults<T, []>;
   owner(context: __compactRuntime.CircuitContext<T>): __compactRuntime.CircuitResults<T, { is_left: boolean,
                                                                                            left: { bytes: Uint8Array
                                                                                                  },
@@ -49,6 +52,9 @@ export type Circuits<T> = {
   transfer(context: __compactRuntime.CircuitContext<T>,
            toNullifier_0: Uint8Array,
            amount_0: bigint): __compactRuntime.CircuitResults<T, []>;
+  buy(context: __compactRuntime.CircuitContext<T>,
+      amountToBuy_0: bigint,
+      payment_0: { nonce: Uint8Array, color: Uint8Array, value: bigint }): __compactRuntime.CircuitResults<T, []>;
   publicKey(context: __compactRuntime.CircuitContext<T>, sk_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
   nullify(context: __compactRuntime.CircuitContext<T>,
           sk_0: Uint8Array,
@@ -72,6 +78,9 @@ export type Ledger = {
     lookup(key_0: Uint8Array): bigint;
     [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
   };
+  readonly expectedCoinType: Uint8Array;
+  readonly pricePerToken: bigint;
+  readonly issuerNullifier: Uint8Array;
 }
 
 export type ContractReferenceLocations = any;
@@ -84,7 +93,9 @@ export declare class Contract<T, W extends Witnesses<T> = Witnesses<T>> {
   impureCircuits: ImpureCircuits<T>;
   constructor(witnesses: W);
   initialState(context: __compactRuntime.ConstructorContext<T>,
-               _tokenName_0: Uint8Array): __compactRuntime.ConstructorResult<T>;
+               _tokenName_0: Uint8Array,
+               _coinType_0: Uint8Array,
+               _pricePerToken_0: bigint): __compactRuntime.ConstructorResult<T>;
 }
 
 export declare function ledger(state: __compactRuntime.StateValue): Ledger;

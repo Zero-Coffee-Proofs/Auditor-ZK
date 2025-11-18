@@ -19,7 +19,8 @@ import {
 setNetworkId(NetworkId.TestNet);
 export const logger = pino();
 
-export const SEED = "wire ramp index pledge page output happy bird night engine skate opera first option initial demise prosper bamboo monster omit unfold wine release balance";
+// export const SEED = "wire ramp index pledge page output happy bird night engine skate opera first option initial demise prosper bamboo monster omit unfold wine release balance";
+export const SEED = "trash anchor token vault abstract flip another feel rice giggle trial jealous battle gesture thought wall motion road chapter response match often shiver base"
 
 export const INDEXER = 'https://indexer.testnet-02.midnight.network/api/v1/graphql';
 export const INDEXER_WS = 'wss://indexer.testnet-02.midnight.network/api/v1/graphql/ws';

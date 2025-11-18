@@ -92,6 +92,9 @@ export type ContractDerivedState = {
   readonly proofOfReserves: ProofOfReserves;
   readonly minted: bigint;
   readonly balances: Map<string, bigint>;
+  readonly expectedCoinType: Uint8Array;
+  readonly pricePerToken: bigint;
+  readonly issuerNullifier: Uint8Array;
 };
 
 //// HELPERS

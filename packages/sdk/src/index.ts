@@ -45,6 +45,7 @@ export interface DeployedContractAPI {
   submitProof: (commitment: Uint8Array, timestamp: bigint, threshold: bigint) => Promise<void>;
   mint: (balance: bigint, blinder: Uint8Array, amountToMint: bigint) => Promise<void>;
   transfer: (toNullifier: Uint8Array, amount: bigint) => Promise<void>;
+  buy: (amountToBuy: bigint, payment: { nonce: Uint8Array, color: Uint8Array, value: bigint }) => Promise<void>;
 }
 
 export class ContractAPI implements DeployedContractAPI {
@@ -77,6 +78,9 @@ export class ContractAPI implements DeployedContractAPI {
           proofOfReserves: (ledgerState as any).proofOfReserves as ProofOfReserves,
           minted: (ledgerState as any).minted as bigint,
           balances,
+          expectedCoinType: (ledgerState as any).expectedCoinType as Uint8Array,
+          pricePerToken: (ledgerState as any).pricePerToken as bigint,
+          issuerNullifier: (ledgerState as any).issuerNullifier as Uint8Array,
         };
       }),
     );
@@ -100,9 +104,17 @@ export class ContractAPI implements DeployedContractAPI {
     this.logger?.trace({ tx: tx.public });
   }
 
+  async buy(amountToBuy: bigint, payment: { nonce: Uint8Array, color: Uint8Array, value: bigint }): Promise<void> {
+    this.logger?.info('buying tokens');
+    const tx = await this.deployedContract.callTx.buy(amountToBuy, payment);
+    this.logger?.trace({ tx: tx.public });
+  }
+
   static async deploy(
     providers: ContractProviders,
     tokenName: string,
+    coinType: Uint8Array,
+    pricePerToken: bigint,
     logger: Logger | undefined,
   ): Promise<ContractAPI> {
     logger?.info('deployContract');
@@ -118,7 +130,7 @@ export class ContractAPI implements DeployedContractAPI {
       privateStateId: contractPrivateStateKey,
       contract: contractContractInstance,
       initialPrivateState,
-      args: [{ bytes: tokenNameBytes }] as any,
+      args: [tokenNameBytes, coinType, pricePerToken],
     });
 
     return new ContractAPI(deployed, providers, logger);

@@ -54,6 +54,10 @@ export ledger tokenInfo: TokenInfo;
 export ledger proofOfReserves: ProofOfReserves;
 export ledger minted: Uint<1>;                     // 0 = not minted, 1 = tokens have been minted
 export ledger balances: Map<Bytes<32>, Uint<64>>; // Nullifier -> token balance (privacy-preserving)
+export ledger expectedCoinType: Bytes<32>;         // Expected coin type for payments (e.g., tDUST)
+export ledger pricePerToken: Uint<64>;              // Price per token in smallest unit (e.g., cents)
+export ledger issuerNullifier: Bytes<32>;          // Issuer's nullifier set during mint
+ledger accumulatedPayments: Map<Bytes<32>, QualifiedCoinInfo>; // Payments for issuer to claim
 
 /*
     CONSTRUCTOR
@@ -61,12 +65,18 @@ export ledger balances: Map<Bytes<32>, Uint<64>>; // Nullifier -> token balance 
     Initializes the contract with:
     - Owner (deployer) who can submit proofs
     - Token name
+    - Expected coin type for payments
+    - Price per token
     - Empty proof of reserves (threshold = 0 initially)
 
     @param _tokenName - The name of the token (padded to 64 bytes)
+    @param _coinType - The expected coin type for payments (32 bytes)
+    @param _pricePerToken - Price per token in smallest unit (e.g., 100 = 1 tDUST)
 */
 constructor(
-  _tokenName: Bytes<64>
+  _tokenName: Bytes<64>,
+  _coinType: Bytes<32>,
+  _pricePerToken: Uint<64>
 ) {
   // Initialize Ownable module with the deployer as owner
   const own = left<ZswapCoinPublicKey, ContractAddress>(disclose(ownPublicKey()));
@@ -85,8 +95,13 @@ constructor(
     threshold: 0
   });
 
-  // Token not yet minted
+  // Set payment configuration
+  expectedCoinType = disclose(_coinType);
+  pricePerToken = disclose(_pricePerToken);
+
+  // Token not yet minted, issuer not set
   minted = disclose(0);
+  issuerNullifier = disclose(pad(32, ""));
 }
 
 /*
@@ -120,17 +135,20 @@ export circuit submitProof(
 /*
     MINT TOKENS
 
-    Allows a user to mint tokens by proving they know the balance and blinder
+    Allows the issuer to mint tokens by proving they know the balance and blinder
     that match the committed proof of reserves.
 
     ONE-TIME OPERATION - Once tokens are minted, this circuit cannot be called again.
+    NO PAYMENT REQUIRED - Issuer proves reserves to mint, then sells tokens separately.
 
-    PRIVACY: The user's actual balance is kept private. The circuit proves in zero-knowledge:
-    1. User knows balance and blinder such that hash(balance || blinder) == commitment
+    PRIVACY: The issuer's actual balance is kept private. The circuit proves in zero-knowledge:
+    1. Issuer knows balance and blinder such that hash(balance || blinder) == commitment
     2. balance >= threshold (meets minimum reserve requirement)
     3. threshold >= amountToMint (minting amount is within limits)
 
-    @param balance - PRIVATE: User's actual balance in cents (e.g., 2091275 = $20,912.75)
+    The issuer's nullifier is stored publicly for token sales.
+
+    @param balance - PRIVATE: Issuer's actual balance in cents (e.g., 2091275 = $20,912.75)
     @param blinder - PRIVATE: Blinding factor from MPC protocol (32 bytes)
     @param amountToMint - PUBLIC: Number of tokens to mint
 */
@@ -152,17 +170,20 @@ export circuit mint(
          "Invalid commitment: provided balance and blinder do not match");
 
   // Verify balance constraints:
-  // 1. User's balance >= threshold (meets minimum reserves)
+  // 1. Issuer's balance >= threshold (meets minimum reserves)
   // 2. threshold >= amountToMint (minting within allowed limits)
   assert(balance >= proofOfReserves.threshold,
          "Balance below required threshold - insufficient reserves");
   assert(proofOfReserves.threshold >= amountToMint,
          "Mint amount exceeds threshold - cannot mint more than threshold allows");
 
-  // Mint tokens to user's nullifier (privacy-preserving)
-  // User proves knowledge of secret_key and salt to create nullifier
-  const userNullifier = nullify(secret_key(), salt());
-  balances.insert(disclose(userNullifier), disclose(amountToMint));
+  // Mint tokens to issuer's nullifier (privacy-preserving)
+  // Issuer proves knowledge of secret_key and salt to create nullifier
+  const issuerNullifierValue = nullify(secret_key(), salt());
+  balances.insert(disclose(issuerNullifierValue), disclose(amountToMint));
+
+  // Store issuer's nullifier publicly for token sales
+  issuerNullifier = disclose(issuerNullifierValue);
 
   // Update total supply
   tokenInfo = disclose(TokenInfo {
@@ -220,6 +241,83 @@ export circuit transfer(toNullifier: Bytes<32>, amount: Uint<64>): [] {
   }
   balances.insert(toNullifierD, newRecipientBalance);
 }
+
+/*
+    BUY TOKENS
+
+    Allows buyers to purchase tokens from the issuer by sending payment.
+    Tokens are transferred from issuer's nullifier to buyer's nullifier.
+    Payment is stored in contract for issuer to claim later.
+
+    MULTIPLE PURCHASES ALLOWED - Unlike minting, buying can happen multiple times
+    until issuer runs out of tokens.
+
+    @param amountToBuy - PUBLIC: Number of tokens to buy
+    @param payment - PUBLIC: Coin to pay for the tokens
+*/
+export circuit buy(
+  amountToBuy: Uint<64>,      // PUBLIC input
+  payment: CoinInfo           // PUBLIC input - payment coin
+): [] {
+  // Tokens must have been minted
+  assert(minted == 1, "Tokens not yet minted - cannot buy");
+
+  // Disclose parameters
+  const amountToBuyD = disclose(amountToBuy);
+  const disclosedPayment = disclose(payment);
+
+  // Verify payment
+  const totalPrice = amountToBuyD * pricePerToken;
+  assert(disclosedPayment.color == expectedCoinType, "Wrong coin type for payment");
+  assert(disclosedPayment.value == totalPrice, "Payment amount does not match price");
+  receive(disclosedPayment);
+
+  // Check issuer has sufficient tokens
+  const issuerBalance = balances.member(issuerNullifier) ? balances.lookup(issuerNullifier) : (0 as Uint<64>);
+  assert(issuerBalance >= amountToBuyD, "Issuer has insufficient tokens for sale");
+
+  // Deduct from issuer's nullifier
+  const newIssuerBalance = (issuerBalance - amountToBuyD) as Uint<64>;
+  balances.remove(issuerNullifier);
+  if (newIssuerBalance > 0) {
+    balances.insert(issuerNullifier, newIssuerBalance);
+  }
+
+  // Add to buyer's nullifier (buyer proves knowledge of secret_key/salt)
+  const buyerNullifier = disclose(nullify(secret_key(), salt()));
+  const buyerBalance = balances.member(buyerNullifier) ? balances.lookup(buyerNullifier) : (0 as Uint<64>);
+  const newBuyerBalance = (buyerBalance + amountToBuyD) as Uint<64>;
+
+  if (balances.member(buyerNullifier)) {
+    balances.remove(buyerNullifier);
+  }
+  balances.insert(buyerNullifier, newBuyerBalance);
+
+  // Store payment in contract for issuer to claim
+  // Use payment color as key (accumulate payments of same type)
+  const existingPayment = accumulatedPayments.member(disclosedPayment.color);
+  if (existingPayment) {
+    // Merge with existing payment
+    const existing = accumulatedPayments.lookup(disclosedPayment.color);
+    const merged = mergeCoinImmediate(existing, disclosedPayment);
+    accumulatedPayments.remove(disclosedPayment.color);
+    accumulatedPayments.insertCoin(disclosedPayment.color, merged, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  } else {
+    // First payment of this type
+    accumulatedPayments.insertCoin(disclosedPayment.color, disclosedPayment, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  }
+}
+
+// TODO: Implement claim functionality for issuer
+// Allows issuer to claim accumulated payments from token sales
+// export circuit claim(): [] {
+//   // Issuer proves knowledge of issuerNullifier
+//   const claimantNullifier = disclose(nullify(secret_key(), salt()));
+//   assert(claimantNullifier == issuerNullifier, "Only issuer can claim payments");
+//
+//   // Send all accumulated payments to issuer
+//   // ... implementation
+// }
 
 // TODO: Implement burn functionality
 // Burn tokens from user's nullifier balance and reduce total supply
