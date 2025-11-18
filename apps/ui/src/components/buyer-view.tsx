@@ -103,7 +103,7 @@ export function BuyerView() {
             <div className="flex gap-2">
               <Input
                 id="contract-address"
-                placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+                placeholder="0200f2e857cbb73aa7627dba0adc9c363b913f9a7b2a4fe335d521e49e04b429a7ee"
                 value={contractAddress}
                 onChange={(e) => setContractAddress(e.target.value)}
                 className="font-mono text-sm"
