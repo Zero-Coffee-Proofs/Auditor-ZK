@@ -14,7 +14,7 @@
 // limitations under the License.
 
 /**
- * KYC SDK common types and abstractions.
+ * ProvedToken SDK common types and abstractions.
  *
  * @module
  */
@@ -22,11 +22,11 @@
 import { type MidnightProviders } from "@midnight-ntwrk/midnight-js-types";
 import { type FoundContract } from "@midnight-ntwrk/midnight-js-contracts";
 import type {
-  KYCPrivateState,
+  TokenPrivateState,
   Contract,
   Witnesses,
-  Assertion,
-  RuleSet,
+  ProofOfReserves,
+  TokenInfo,
 } from "contracts";
 
 export const contractPrivateStateKey = "contractPrivateState";
@@ -37,29 +37,29 @@ export type PrivateStateId = typeof contractPrivateStateKey;
  *
  * @remarks
  * `PrivateStates` maps the provider key to the private state shape expected
- * by the KYC contract.
+ * by the ProvedToken contract.
  *
  * @public
  */
 export type PrivateStates = {
   /**
-   * Key used to provide the private state for KYC contract deployments.
+   * Key used to provide the private state for ProvedToken contract deployments.
    */
-  readonly contractPrivateState: KYCPrivateState;
+  readonly contractPrivateState: TokenPrivateState;
 };
 
 /**
- * Represents the KYC contract with its private state witnesses.
+ * Represents the ProvedToken contract with its private state witnesses.
  *
  * @public
  */
 export type ContractContract = Contract<
-  KYCPrivateState,
-  Witnesses<KYCPrivateState>
+  TokenPrivateState,
+  Witnesses<TokenPrivateState>
 >;
 
 /**
- * The keys of the circuits exported from the KYC contract.
+ * The keys of the circuits exported from the ProvedToken contract.
  *
  * @public
  */
@@ -69,27 +69,29 @@ export type ContractCircuitKeys = Exclude<
 >;
 
 /**
- * The providers required by the KYC contract adapter.
+ * The providers required by the ProvedToken contract adapter.
  *
  * @public
  */
 export type ContractProviders = MidnightProviders<
   ContractCircuitKeys,
   PrivateStateId,
-  KYCPrivateState
+  TokenPrivateState
 >;
 
 /**
- * A deployed KYC contract on the network.
+ * A deployed ProvedToken contract on the network.
  *
  * @public
  */
 export type DeployedContractContract = FoundContract<ContractContract>;
 
 export type ContractDerivedState = {
-  readonly owner: string;
-  readonly rules: RuleSet;
-  readonly assertions: Map<string, Assertion>;
+  readonly owner: any;
+  readonly tokenInfo: TokenInfo;
+  readonly proofOfReserves: ProofOfReserves;
+  readonly minted: bigint;
+  readonly balances: Map<string, bigint>;
 };
 
 //// HELPERS

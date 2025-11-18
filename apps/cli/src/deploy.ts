@@ -17,7 +17,7 @@ const providers: ContractProviders = {
     INDEXER,
     INDEXER_WS
   ),
-  zkConfigProvider: new NodeZkConfigProvider<"addAssertion">(
+  zkConfigProvider: new NodeZkConfigProvider<"submitProof" | "mint" | "transfer">(
     ZK_CONFIG_PATH
   ),
   proofProvider: httpClientProofProvider(PROOF_SERVER),
@@ -25,7 +25,7 @@ const providers: ContractProviders = {
   midnightProvider: walletAndMidnightProvider,
 };
 
-const api = await ContractAPI.deploy(providers, logger);
+const api = await ContractAPI.deploy(providers, "USD-ZK", logger);
 
 console.log("Deployed contract address: ", api.deployedContractAddress);
 

@@ -24,6 +24,12 @@ export type ImpureCircuits<T> = {
   transfer(context: __compactRuntime.CircuitContext<T>,
            toNullifier_0: Uint8Array,
            amount_0: bigint): __compactRuntime.CircuitResults<T, []>;
+  owner(context: __compactRuntime.CircuitContext<T>): __compactRuntime.CircuitResults<T, { is_left: boolean,
+                                                                                           left: { bytes: Uint8Array
+                                                                                                 },
+                                                                                           right: { bytes: Uint8Array
+                                                                                                  }
+                                                                                         }>;
 }
 
 export type PureCircuits = {
@@ -47,6 +53,12 @@ export type Circuits<T> = {
   nullify(context: __compactRuntime.CircuitContext<T>,
           sk_0: Uint8Array,
           salt_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
+  owner(context: __compactRuntime.CircuitContext<T>): __compactRuntime.CircuitResults<T, { is_left: boolean,
+                                                                                           left: { bytes: Uint8Array
+                                                                                                 },
+                                                                                           right: { bytes: Uint8Array
+                                                                                                  }
+                                                                                         }>;
 }
 
 export type Ledger = {
@@ -72,7 +84,6 @@ export declare class Contract<T, W extends Witnesses<T> = Witnesses<T>> {
   impureCircuits: ImpureCircuits<T>;
   constructor(witnesses: W);
   initialState(context: __compactRuntime.ConstructorContext<T>,
-               _owner_0: { bytes: Uint8Array },
                _tokenName_0: Uint8Array): __compactRuntime.ConstructorResult<T>;
 }
 

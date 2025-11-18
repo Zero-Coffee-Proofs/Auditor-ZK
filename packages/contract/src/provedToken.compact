@@ -59,19 +59,18 @@ export ledger balances: Map<Bytes<32>, Uint<64>>; // Nullifier -> token balance 
     CONSTRUCTOR
 
     Initializes the contract with:
-    - Owner (AuditorZK) who can submit proofs
+    - Owner (deployer) who can submit proofs
     - Token name
     - Empty proof of reserves (threshold = 0 initially)
 
-    @param _owner - The AuditorZK public key (can submit proofs)
     @param _tokenName - The name of the token (padded to 64 bytes)
 */
 constructor(
-  _owner: ZswapCoinPublicKey,
   _tokenName: Bytes<64>
 ) {
-  // Initialize Ownable module with the AuditorZK owner
-  Ownable_initialize(disclose(left<ZswapCoinPublicKey, ContractAddress>(_owner)));
+  // Initialize Ownable module with the deployer as owner
+  const own = left<ZswapCoinPublicKey, ContractAddress>(disclose(ownPublicKey()));
+  Ownable_initialize(own);
 
   // Initialize token metadata
   tokenInfo = disclose(TokenInfo {
@@ -272,4 +271,8 @@ export circuit publicKey(sk: Bytes<32>): Bytes<32> {
 */
 export circuit nullify(sk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
   return persistentHash<Vector<3, Bytes<32>>>([pad(32, "pk"), sk, salt]);
+}
+
+export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
+  return Ownable_owner();
 }
