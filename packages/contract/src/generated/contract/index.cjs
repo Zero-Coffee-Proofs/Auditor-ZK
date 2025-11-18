@@ -242,6 +242,51 @@ class Contract {
         partialProofData.output = { value: [], alignment: [] };
         return { result: result_0, context: context, proofData: partialProofData };
       },
+      transfer: (...args_1) => {
+        if (args_1.length !== 3) {
+          throw new __compactRuntime.CompactError(`transfer: expected 3 arguments (as invoked from Typescript), received ${args_1.length}`);
+        }
+        const contextOrig_0 = args_1[0];
+        const toNullifier_0 = args_1[1];
+        const amount_0 = args_1[2];
+        if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.originalState != undefined && contextOrig_0.transactionContext != undefined)) {
+          __compactRuntime.type_error('transfer',
+                                      'argument 1 (as invoked from Typescript)',
+                                      'provedToken.compact line 194 char 1',
+                                      'CircuitContext',
+                                      contextOrig_0)
+        }
+        if (!(toNullifier_0.buffer instanceof ArrayBuffer && toNullifier_0.BYTES_PER_ELEMENT === 1 && toNullifier_0.length === 32)) {
+          __compactRuntime.type_error('transfer',
+                                      'argument 1 (argument 2 as invoked from Typescript)',
+                                      'provedToken.compact line 194 char 1',
+                                      'Bytes<32>',
+                                      toNullifier_0)
+        }
+        if (!(typeof(amount_0) === 'bigint' && amount_0 >= 0n && amount_0 <= 18446744073709551615n)) {
+          __compactRuntime.type_error('transfer',
+                                      'argument 2 (argument 3 as invoked from Typescript)',
+                                      'provedToken.compact line 194 char 1',
+                                      'Uint<0..18446744073709551615>',
+                                      amount_0)
+        }
+        const context = { ...contextOrig_0 };
+        const partialProofData = {
+          input: {
+            value: _descriptor_0.toValue(toNullifier_0).concat(_descriptor_2.toValue(amount_0)),
+            alignment: _descriptor_0.alignment().concat(_descriptor_2.alignment())
+          },
+          output: undefined,
+          publicTranscript: [],
+          privateTranscriptOutputs: []
+        };
+        const result_0 = this._transfer_0(context,
+                                          partialProofData,
+                                          toNullifier_0,
+                                          amount_0);
+        partialProofData.output = { value: [], alignment: [] };
+        return { result: result_0, context: context, proofData: partialProofData };
+      },
       publicKey(context, ...args_1) {
         return { result: pureCircuits.publicKey(...args_1), context };
       },
@@ -251,7 +296,8 @@ class Contract {
     };
     this.impureCircuits = {
       submitProof: this.circuits.submitProof,
-      mint: this.circuits.mint
+      mint: this.circuits.mint,
+      transfer: this.circuits.transfer
     };
   }
   initialState(...args_0) {
@@ -298,6 +344,7 @@ class Contract {
     state_0.data = stateValue_0;
     state_0.setOperation('submitProof', new __compactRuntime.ContractOperation());
     state_0.setOperation('mint', new __compactRuntime.ContractOperation());
+    state_0.setOperation('transfer', new __compactRuntime.ContractOperation());
     const context = {
       originalState: state_0,
       currentPrivateState: constructorContext_0.initialPrivateState,
@@ -714,6 +761,184 @@ class Contract {
                      { ins: { cached: false, n: 1 } }]);
     return [];
   }
+  _transfer_0(context, partialProofData, toNullifier_0, amount_0) {
+    const fromNullifier_0 = this._nullify_0(this._secret_key_0(context,
+                                                               partialProofData),
+                                            this._salt_0(context,
+                                                         partialProofData));
+    const toNullifierD_0 = toNullifier_0;
+    const amountD_0 = amount_0;
+    const senderBalance_0 = _descriptor_6.fromValue(Contract._query(context,
+                                                                    partialProofData,
+                                                                    [
+                                                                     { dup: { n: 0 } },
+                                                                     { idx: { cached: false,
+                                                                              pushPath: false,
+                                                                              path: [
+                                                                                     { tag: 'value',
+                                                                                       value: { value: _descriptor_12.toValue(5n),
+                                                                                                alignment: _descriptor_12.alignment() } }] } },
+                                                                     { push: { storage: false,
+                                                                               value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(fromNullifier_0),
+                                                                                                                            alignment: _descriptor_0.alignment() }).encode() } },
+                                                                     'member',
+                                                                     { popeq: { cached: true,
+                                                                                result: undefined } }]).value)
+                            ?
+                            _descriptor_2.fromValue(Contract._query(context,
+                                                                    partialProofData,
+                                                                    [
+                                                                     { dup: { n: 0 } },
+                                                                     { idx: { cached: false,
+                                                                              pushPath: false,
+                                                                              path: [
+                                                                                     { tag: 'value',
+                                                                                       value: { value: _descriptor_12.toValue(5n),
+                                                                                                alignment: _descriptor_12.alignment() } }] } },
+                                                                     { idx: { cached: false,
+                                                                              pushPath: false,
+                                                                              path: [
+                                                                                     { tag: 'value',
+                                                                                       value: { value: _descriptor_0.toValue(fromNullifier_0),
+                                                                                                alignment: _descriptor_0.alignment() } }] } },
+                                                                     { popeq: { cached: false,
+                                                                                result: undefined } }]).value)
+                            :
+                            0n;
+    __compactRuntime.assert(senderBalance_0 >= amountD_0,
+                            'Insufficient balance for transfer');
+    const newSenderBalance_0 = (__compactRuntime.assert(!(senderBalance_0
+                                                          <
+                                                          amountD_0),
+                                                        'result of subtraction would be negative'),
+                                senderBalance_0 - amountD_0);
+    Contract._query(context,
+                    partialProofData,
+                    [
+                     { idx: { cached: false,
+                              pushPath: true,
+                              path: [
+                                     { tag: 'value',
+                                       value: { value: _descriptor_12.toValue(5n),
+                                                alignment: _descriptor_12.alignment() } }] } },
+                     { push: { storage: false,
+                               value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(fromNullifier_0),
+                                                                            alignment: _descriptor_0.alignment() }).encode() } },
+                     { rem: { cached: false } },
+                     { ins: { cached: true, n: 1 } }]);
+    if (newSenderBalance_0 > 0n) {
+      Contract._query(context,
+                      partialProofData,
+                      [
+                       { idx: { cached: false,
+                                pushPath: true,
+                                path: [
+                                       { tag: 'value',
+                                         value: { value: _descriptor_12.toValue(5n),
+                                                  alignment: _descriptor_12.alignment() } }] } },
+                       { push: { storage: false,
+                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(fromNullifier_0),
+                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                       { push: { storage: true,
+                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_2.toValue(newSenderBalance_0),
+                                                                              alignment: _descriptor_2.alignment() }).encode() } },
+                       { ins: { cached: false, n: 1 } },
+                       { ins: { cached: true, n: 1 } }]);
+    }
+    const recipientBalance_0 = _descriptor_6.fromValue(Contract._query(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_12.toValue(5n),
+                                                                                                   alignment: _descriptor_12.alignment() } }] } },
+                                                                        { push: { storage: false,
+                                                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(toNullifierD_0),
+                                                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
+                                                                        'member',
+                                                                        { popeq: { cached: true,
+                                                                                   result: undefined } }]).value)
+                               ?
+                               _descriptor_2.fromValue(Contract._query(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_12.toValue(5n),
+                                                                                                   alignment: _descriptor_12.alignment() } }] } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_0.toValue(toNullifierD_0),
+                                                                                                   alignment: _descriptor_0.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value)
+                               :
+                               0n;
+    const newRecipientBalance_0 = ((t1) => {
+                                    if (t1 > 18446744073709551615n) {
+                                      throw new __compactRuntime.CompactError('provedToken.compact line 217 char 31: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 18446744073709551615');
+                                    }
+                                    return t1;
+                                  })(recipientBalance_0 + amountD_0);
+    if (_descriptor_6.fromValue(Contract._query(context,
+                                                partialProofData,
+                                                [
+                                                 { dup: { n: 0 } },
+                                                 { idx: { cached: false,
+                                                          pushPath: false,
+                                                          path: [
+                                                                 { tag: 'value',
+                                                                   value: { value: _descriptor_12.toValue(5n),
+                                                                            alignment: _descriptor_12.alignment() } }] } },
+                                                 { push: { storage: false,
+                                                           value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(toNullifierD_0),
+                                                                                                        alignment: _descriptor_0.alignment() }).encode() } },
+                                                 'member',
+                                                 { popeq: { cached: true,
+                                                            result: undefined } }]).value))
+    {
+      Contract._query(context,
+                      partialProofData,
+                      [
+                       { idx: { cached: false,
+                                pushPath: true,
+                                path: [
+                                       { tag: 'value',
+                                         value: { value: _descriptor_12.toValue(5n),
+                                                  alignment: _descriptor_12.alignment() } }] } },
+                       { push: { storage: false,
+                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(toNullifierD_0),
+                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                       { rem: { cached: false } },
+                       { ins: { cached: true, n: 1 } }]);
+    }
+    Contract._query(context,
+                    partialProofData,
+                    [
+                     { idx: { cached: false,
+                              pushPath: true,
+                              path: [
+                                     { tag: 'value',
+                                       value: { value: _descriptor_12.toValue(5n),
+                                                alignment: _descriptor_12.alignment() } }] } },
+                     { push: { storage: false,
+                               value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(toNullifierD_0),
+                                                                            alignment: _descriptor_0.alignment() }).encode() } },
+                     { push: { storage: true,
+                               value: __compactRuntime.StateValue.newCell({ value: _descriptor_2.toValue(newRecipientBalance_0),
+                                                                            alignment: _descriptor_2.alignment() }).encode() } },
+                     { ins: { cached: false, n: 1 } },
+                     { ins: { cached: true, n: 1 } }]);
+    return [];
+  }
   _publicKey_0(sk_0) {
     return this._persistentHash_0([new Uint8Array([112, 107, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
                                    sk_0]);
@@ -963,7 +1188,7 @@ const pureCircuits = {
     if (!(sk_0.buffer instanceof ArrayBuffer && sk_0.BYTES_PER_ELEMENT === 1 && sk_0.length === 32)) {
       __compactRuntime.type_error('publicKey',
                                   'argument 1',
-                                  'provedToken.compact line 233 char 1',
+                                  'provedToken.compact line 259 char 1',
                                   'Bytes<32>',
                                   sk_0)
     }
@@ -978,14 +1203,14 @@ const pureCircuits = {
     if (!(sk_0.buffer instanceof ArrayBuffer && sk_0.BYTES_PER_ELEMENT === 1 && sk_0.length === 32)) {
       __compactRuntime.type_error('nullify',
                                   'argument 1',
-                                  'provedToken.compact line 247 char 1',
+                                  'provedToken.compact line 273 char 1',
                                   'Bytes<32>',
                                   sk_0)
     }
     if (!(salt_0.buffer instanceof ArrayBuffer && salt_0.BYTES_PER_ELEMENT === 1 && salt_0.length === 32)) {
       __compactRuntime.type_error('nullify',
                                   'argument 2',
-                                  'provedToken.compact line 247 char 1',
+                                  'provedToken.compact line 273 char 1',
                                   'Bytes<32>',
                                   salt_0)
     }
