@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { saveTokenizerSession } from '@/lib/tokenizer-session'
 import { usePlaidLink } from 'react-plaid-link'
 
 const PAYMENT_OPTIONS = [
@@ -28,7 +29,6 @@ export function TokenizerView() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   // exchange public token for access token
   const onPlaidSuccess = async (public_token: string) => {
@@ -39,23 +39,27 @@ export function TokenizerView() {
         body: JSON.stringify({ public_token })
       });
       const data = await response.json();
-      setAccessToken(data.access_token);
-      console.log('Access token received:', data.access_token);
+      if (!data.access_token) {
+        throw new Error('Missing access token in Plaid exchange response');
+      }
 
-      // Show success after Plaid connection
+  console.log('Access token received:', data.access_token);
+
+      saveTokenizerSession({
+        accessToken: data.access_token,
+        assetName,
+        assetValue,
+        tokenSupply,
+        description,
+        target,
+        createdAt: new Date().toISOString(),
+      });
+
       setIsSubmitting(false);
       setShowSuccess(true);
 
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-        setAssetName('');
-        setAssetValue('');
-        setTokenSupply('');
-        setDescription('');
-        setTarget('');
-        setLinkToken(null); // Reset link token too
-      }, 3000);
+      // Redirect into verifier workflow with isolated headers
+      window.location.assign('/verify');
     } catch (error) {
       console.error('Error exchanging token:', error);
       setIsSubmitting(false);

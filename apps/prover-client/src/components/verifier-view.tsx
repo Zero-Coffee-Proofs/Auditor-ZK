@@ -23,7 +23,11 @@ interface Config {
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
-export function VerifierView() {
+interface VerifierViewProps {
+  accessToken?: string;
+}
+
+export function VerifierView({ accessToken }: VerifierViewProps) {
   const [config, setConfig] = useState<Config>({
     verifierUrl: process.env.REACT_APP_VERIFIER_URL || 'ws://localhost:7047',
     proxyUrl: process.env.REACT_APP_PROXY_URL || 'ws://localhost:55688',
@@ -74,7 +78,7 @@ export function VerifierView() {
       const requestBody = {
         client_id: process.env.REACT_APP_PLAID_CLIENT_ID,
         secret: process.env.REACT_APP_PLAID_SECRET,
-        access_token: process.env.REACT_APP_PLAID_ACCESS_TOKEN,
+  access_token: accessToken || process.env.REACT_APP_PLAID_ACCESS_TOKEN,
         options: {
           account_ids: [process.env.REACT_APP_PLAID_ACCOUNT_ID]
         }
