@@ -93,10 +93,13 @@ module.exports = {
     compress: true,
     port: 3000,
     hot: true,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
+    // Removed COOP/COEP headers for dev to allow Plaid and normal navigation
+    // Re-enable only if you need SharedArrayBuffer or other isolation features
+    // headers: {
+    //   'Cross-Origin-Opener-Policy': 'same-origin',
+    //   'Cross-Origin-Embedder-Policy': 'credentialless',
+    //   'Cross-Origin-Resource-Policy': 'cross-origin',
+    // },
     historyApiFallback: {
       // disableDotRule: true means files with dots (extensions) won't be caught
       // This allows .wasm files to be served directly by webpack-dev-server
