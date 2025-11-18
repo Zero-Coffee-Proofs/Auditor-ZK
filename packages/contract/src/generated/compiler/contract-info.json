@@ -1,58 +1,28 @@
 {
   "circuits": [
     {
-      "name": "updateRules",
+      "name": "submitProof",
       "pure": false,
       "arguments": [
         {
-          "name": "newRules",
+          "name": "commitment",
           "type": {
-            "type-name": "Struct",
-            "name": "RuleSet",
-            "elements": [
-              {
-                "name": "version",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "monthlyIncome",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "debtToIncomeRatio",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "outstandingDebt",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "minBalance",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "minAge",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              }
-            ]
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "timestamp",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "threshold",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
           }
         }
       ],
@@ -63,58 +33,28 @@
       }
     },
     {
-      "name": "addAssertion",
+      "name": "mint",
       "pure": false,
       "arguments": [
         {
-          "name": "input",
+          "name": "balance",
           "type": {
-            "type-name": "Struct",
-            "name": "AssertionInput",
-            "elements": [
-              {
-                "name": "income",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "debtToIncomeRatio",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "outstandingDebt",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "minBalance",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "age",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 18446744073709551615
-                }
-              },
-              {
-                "name": "kyc",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 1
-                }
-              }
-            ]
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "blinder",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        },
+        {
+          "name": "amountToMint",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
           }
         }
       ],
@@ -130,37 +70,6 @@
       "arguments": [
         {
           "name": "sk",
-          "type": {
-            "type-name": "Bytes",
-            "length": 32
-          }
-        }
-      ],
-      "result-type": {
-        "type-name": "Bytes",
-        "length": 32
-      }
-    },
-    {
-      "name": "hasheameloPapa",
-      "pure": true,
-      "arguments": [
-        {
-          "name": "serverName",
-          "type": {
-            "type-name": "Bytes",
-            "length": 32
-          }
-        },
-        {
-          "name": "timestamp",
-          "type": {
-            "type-name": "Bytes",
-            "length": 32
-          }
-        },
-        {
-          "name": "commitment",
           "type": {
             "type-name": "Bytes",
             "length": 32

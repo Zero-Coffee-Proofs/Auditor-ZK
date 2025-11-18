@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "rm -rf dist && pnpm run compact && tsc --project tsconfig.build.json && cp -r ./src/generated ./dist/generated && cp ./src/kyc.compact ./dist",
-    "compact": "compact compile src/kyc.compact ./src/generated",
+    "compact": "compact compile src/provedToken.compact ./src/generated",
     "lint": "eslint src"
   },
   "devDependencies": {
