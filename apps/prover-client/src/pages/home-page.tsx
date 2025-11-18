@@ -30,15 +30,12 @@ export function HomePage() {
         </div>
 
         <Tabs defaultValue="tokenizer" className="mx-auto max-w-4xl">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="tokenizer" className="text-base">
               Tokenize Asset
             </TabsTrigger>
             <TabsTrigger value="buyer" className="text-base">
               Buy Tokens
-            </TabsTrigger>
-            <TabsTrigger value="verifier" className="text-base">
-              Verify Reserves
             </TabsTrigger>
           </TabsList>
 
@@ -50,18 +47,7 @@ export function HomePage() {
             <BuyerView />
           </TabsContent>
 
-          <TabsContent value="verifier" className="mt-6">
-            <div className="space-y-4 rounded-lg border border-dashed border-border p-6 text-left">
-              <h2 className="text-xl font-semibold text-foreground">Launch the verifier workspace</h2>
-              <p className="text-muted-foreground">
-                Generating TLSNotary proofs requires a cross-origin isolated page so Web Workers can
-                access SharedArrayBuffer. Launch the secure workspace to continue.
-              </p>
-              <Button onClick={() => window.location.assign('/verify')}>
-                Open verifier workspace
-              </Button>
-            </div>
-          </TabsContent>
+
         </Tabs>
       </main>
 
