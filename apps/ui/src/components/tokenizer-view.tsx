@@ -19,32 +19,30 @@ const PAYMENT_OPTIONS = [
 export function TokenizerView() {
   const [assetName, setAssetName] = useState('')
   const [assetValue, setAssetValue] = useState('')
-  const [tokenSymbol, setTokenSymbol] = useState('')
   const [tokenSupply, setTokenSupply] = useState('')
   const [description, setDescription] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState('')
+  const [target, setTarget] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
+
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000))
-    
+
     setIsSubmitting(false)
     setShowSuccess(true)
-    
+
     // Reset form after 3 seconds
     setTimeout(() => {
       setShowSuccess(false)
       setAssetName('')
       setAssetValue('')
-      setTokenSymbol('')
       setTokenSupply('')
       setDescription('')
-      setPaymentMethod('')
+      setTarget('')
     }, 3000)
   }
 
@@ -90,19 +88,6 @@ export function TokenizerView() {
                 required
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="token-symbol">Token Symbol</Label>
-              <Input
-                id="token-symbol"
-                placeholder="e.g., OFFICE"
-                value={tokenSymbol}
-                onChange={(e) => setTokenSymbol(e.target.value.toUpperCase())}
-                maxLength={10}
-                required
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="token-supply">Total Token Supply</Label>
               <Input
@@ -129,10 +114,10 @@ export function TokenizerView() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="payment-method">Payment Method</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod} required>
+            <Label htmlFor="payment-method">What do you want to tokenize?</Label>
+            <Select value={target} onValueChange={setTarget} required>
               <SelectTrigger id="payment-method">
-                <SelectValue placeholder="Select payment method" />
+                <SelectValue placeholder="Select proof of funds" />
               </SelectTrigger>
               <SelectContent>
                 {PAYMENT_OPTIONS.map((option) => (
@@ -153,8 +138,8 @@ export function TokenizerView() {
                 ))}
               </SelectContent>
             </Select>
-            
-            {paymentMethod === 'usd' && (
+
+            {target === 'usd' && (
               <Alert className="mt-2">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="text-sm">
