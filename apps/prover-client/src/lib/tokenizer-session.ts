@@ -8,6 +8,8 @@ export interface TokenizerSessionData {
   description: string;
   target: string;
   createdAt: string;
+  accountId?: string;
+  accountName?: string;
 }
 
 export function saveTokenizerSession(data: TokenizerSessionData) {

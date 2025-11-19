@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { saveTokenizerSession } from '@/lib/tokenizer-session'
-import { usePlaidLink } from 'react-plaid-link'
+import { usePlaidLink, type PlaidLinkOnSuccessMetadata } from 'react-plaid-link'
 
 const PAYMENT_OPTIONS = [
   { id: 'usd', name: 'USD (via Plaid)', icon: '$', enabled: true },
@@ -31,7 +31,10 @@ export function TokenizerView() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
 
   // exchange public token for access token
-  const onPlaidSuccess = async (public_token: string) => {
+  const onPlaidSuccess = async (
+    public_token: string,
+    metadata: PlaidLinkOnSuccessMetadata
+  ) => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/exchange_public_token`, {
         method: 'POST',
@@ -43,7 +46,14 @@ export function TokenizerView() {
         throw new Error('Missing access token in Plaid exchange response');
       }
 
-  console.log('Access token received:', data.access_token);
+      const primaryAccount = metadata.accounts?.[0];
+      const accountId = primaryAccount?.id;
+      const accountName = primaryAccount?.name;
+
+      console.log('Access token received:', data.access_token);
+      if (accountId) {
+        console.log('Using Plaid account id for verification:', accountId);
+      }
 
       saveTokenizerSession({
         accessToken: data.access_token,
@@ -53,6 +63,8 @@ export function TokenizerView() {
         description,
         target,
         createdAt: new Date().toISOString(),
+        accountId,
+        accountName,
       });
 
       setIsSubmitting(false);
