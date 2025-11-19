@@ -25,9 +25,11 @@ type Status = 'idle' | 'processing' | 'success' | 'error';
 
 interface VerifierViewProps {
   accessToken?: string;
+  accountId?: string;
 }
 
-export function VerifierView({ accessToken }: VerifierViewProps) {
+export function VerifierView({ accessToken, accountId }: VerifierViewProps) {
+  console.log({ accountId })
   const [config, setConfig] = useState<Config>({
     verifierUrl: process.env.REACT_APP_VERIFIER_URL || 'ws://localhost:7047',
     proxyUrl: process.env.REACT_APP_PROXY_URL || 'ws://localhost:55688',
@@ -75,14 +77,18 @@ export function VerifierView({ accessToken }: VerifierViewProps) {
       setMessage('✅ Connected to verifier\n📡 Sending request to mock Plaid...');
 
       // Step 5: Build Plaid API request body for /accounts/balance/get
-      const requestBody = {
+      const selectedAccountId = accountId || process.env.REACT_APP_PLAID_ACCOUNT_ID;
+      const requestBody: Record<string, unknown> = {
         client_id: process.env.REACT_APP_PLAID_CLIENT_ID,
         secret: process.env.REACT_APP_PLAID_SECRET,
-  access_token: accessToken || process.env.REACT_APP_PLAID_ACCESS_TOKEN,
-        options: {
-          account_ids: [process.env.REACT_APP_PLAID_ACCOUNT_ID]
-        }
+        access_token: accessToken || process.env.REACT_APP_PLAID_ACCESS_TOKEN,
       };
+
+      if (selectedAccountId) {
+        requestBody.options = {
+          account_ids: [selectedAccountId],
+        };
+      }
 
       console.log('🔍 DEBUG: Request body object:', requestBody);
       console.log('🔍 DEBUG: Request body type:', typeof requestBody);
@@ -271,7 +277,7 @@ export function VerifierView({ accessToken }: VerifierViewProps) {
           <Card className="bg-muted/50">
             <CardContent className="pt-6">
               <pre className="text-sm whitespace-pre-wrap font-mono">
-{`📊 PROOF OF RESERVES RESULT
+                {`📊 PROOF OF RESERVES RESULT
 ${'='.repeat(50)}
 
 💰 Total Balance:     $${result.balance.toFixed(2)}
@@ -280,8 +286,8 @@ ${result.qualifies ? '✅ QUALIFIED' : '❌ NOT QUALIFIED'}
 
 📁 Accounts:
 ${result.accounts.map((acc: any, i: number) =>
-  `  ${i + 1}. ${acc.name}: $${acc.balance.toFixed(2)}`
-).join('\n')}
+                  `  ${i + 1}. ${acc.name}: $${acc.balance.toFixed(2)}`
+                ).join('\n')}
 
 📡 Transcript:
   Sent:     ${result.transcript.sent} bytes
@@ -330,6 +336,7 @@ function parseBalanceResponse(recvBytes: Uint8Array): { balance: number; account
 
   const data = JSON.parse(bodyStr);
   console.log('📊 Parsed JSON:', data);
+
 
   // Handle Plaid /accounts/balance/get response
   if (!data.accounts || !Array.isArray(data.accounts)) {

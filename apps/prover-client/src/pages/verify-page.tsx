@@ -103,8 +103,13 @@ export function VerifyPage() {
         <div className="mx-auto max-w-4xl space-y-6">
           <Alert>
             <AlertDescription>
-              Successfully received a Plaid access token for <strong>{data.assetName || 'your asset'}</strong>.
-              You can now generate the TLSNotary proof in an isolated context.
+              Successfully received a Plaid access token for <strong>{data.assetName || 'your asset'}</strong>
+              {data.accountName ? (
+                <>
+                  {' '}and account <strong>{data.accountName}</strong>
+                </>
+              ) : null}
+              . You can now generate the TLSNotary proof in an isolated context.
             </AlertDescription>
           </Alert>
 
@@ -133,6 +138,12 @@ export function VerifyPage() {
                   <dt className="text-sm text-muted-foreground">Selected proof target</dt>
                   <dd className="text-base text-foreground uppercase">{data.target}</dd>
                 </div>
+                {data.accountId ? (
+                  <div>
+                    <dt className="text-sm text-muted-foreground">Plaid account id</dt>
+                    <dd className="text-base text-foreground break-all">{data.accountId}</dd>
+                  </div>
+                ) : null}
                 <div className="md:col-span-2">
                   <dt className="text-sm text-muted-foreground">Asset description</dt>
                   <dd className="text-base text-foreground">{data.description}</dd>
@@ -141,7 +152,7 @@ export function VerifyPage() {
             </CardContent>
           </Card>
 
-          <VerifierView accessToken={data.accessToken} />
+          <VerifierView accessToken={data.accessToken} accountId={data.accountId} />
         </div>
       </main>
     </div>
