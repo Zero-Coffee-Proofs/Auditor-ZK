@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
 import * as Comlink from 'comlink';
-import type { WorkerAPI } from './worker';
+import type { WorkerAPI } from '../worker';
 import { Prover } from 'tlsn-js';
 import { HTTPParser } from 'http-parser-js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Shield, CheckCircle2, XCircle } from 'lucide-react';
 
 // Initialize worker
-const worker = new Worker(new URL('./worker.ts', import.meta.url));
+const worker = new Worker(new URL('../worker.ts', import.meta.url));
 const workerApi = Comlink.wrap<WorkerAPI>(worker);
 
 interface Config {
@@ -18,7 +23,11 @@ interface Config {
 
 type Status = 'idle' | 'processing' | 'success' | 'error';
 
-function App() {
+interface VerifierViewProps {
+  accessToken?: string;
+}
+
+export function VerifierView({ accessToken }: VerifierViewProps) {
   const [config, setConfig] = useState<Config>({
     verifierUrl: process.env.REACT_APP_VERIFIER_URL || 'ws://localhost:7047',
     proxyUrl: process.env.REACT_APP_PROXY_URL || 'ws://localhost:55688',
@@ -66,11 +75,10 @@ function App() {
       setMessage('✅ Connected to verifier\n📡 Sending request to mock Plaid...');
 
       // Step 5: Build Plaid API request body for /accounts/balance/get
-      // NOTE: tlsn-js expects body as an object, not a stringified JSON
       const requestBody = {
         client_id: process.env.REACT_APP_PLAID_CLIENT_ID,
         secret: process.env.REACT_APP_PLAID_SECRET,
-        access_token: process.env.REACT_APP_PLAID_ACCESS_TOKEN,
+  access_token: accessToken || process.env.REACT_APP_PLAID_ACCESS_TOKEN,
         options: {
           account_ids: [process.env.REACT_APP_PLAID_ACCOUNT_ID]
         }
@@ -87,7 +95,6 @@ function App() {
           Host: hostname,
           Connection: 'close',
           'Content-Type': 'application/json',
-          // Don't set Content-Length - tlsn-js will calculate it
         },
         body: requestBody,
       };
@@ -165,76 +172,105 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <h1>🔐 AuditorZK Prover</h1>
-      <p className="subtitle">Privacy-Preserving Proof of Reserves</p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          Privacy-Preserving Proof of Reserves
+        </CardTitle>
+        <CardDescription>
+          Generate zero-knowledge proofs of asset reserves using TLSNotary
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <Alert>
+          <AlertDescription>
+            <strong>Prerequisites:</strong> Make sure the verifier server (port 7047),
+            mock Plaid server (port 8443), and WebSocket proxy (port 55688) are running.
+          </AlertDescription>
+        </Alert>
 
-      <div className="info-box">
-        ⚠️ <strong>Prerequisites:</strong> Make sure the verifier server (port 7047),
-        mock Plaid server (port 8443), and WebSocket proxy (port 55688) are running.
-      </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="verifierUrl">Verifier WebSocket URL</Label>
+            <Input
+              id="verifierUrl"
+              type="text"
+              value={config.verifierUrl}
+              onChange={(e) => updateConfig('verifierUrl', e.target.value)}
+              disabled={processing}
+              placeholder="ws://localhost:7047"
+            />
+          </div>
 
-      <div className="config-section">
-        <h3>⚙️ Configuration</h3>
+          <div className="space-y-2">
+            <Label htmlFor="proxyUrl">WebSocket Proxy URL</Label>
+            <Input
+              id="proxyUrl"
+              type="text"
+              value={config.proxyUrl}
+              onChange={(e) => updateConfig('proxyUrl', e.target.value)}
+              disabled={processing}
+              placeholder="ws://localhost:55688"
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Verifier WebSocket URL:</label>
-          <input
-            type="text"
-            value={config.verifierUrl}
-            onChange={(e) => updateConfig('verifierUrl', e.target.value)}
-            disabled={processing}
-            placeholder="ws://localhost:7047"
-          />
+          <div className="space-y-2">
+            <Label htmlFor="targetUrl">Target Server URL</Label>
+            <Input
+              id="targetUrl"
+              type="text"
+              value={config.targetUrl}
+              onChange={(e) => updateConfig('targetUrl', e.target.value)}
+              disabled={processing}
+              placeholder="http://127.0.0.1:8443/balance"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="threshold">Balance Threshold ($)</Label>
+            <Input
+              id="threshold"
+              type="number"
+              value={config.threshold}
+              onChange={(e) => updateConfig('threshold', parseFloat(e.target.value) || 0)}
+              disabled={processing}
+              placeholder="10000"
+            />
+          </div>
         </div>
 
-        <div className="form-group">
-          <label>WebSocket Proxy URL:</label>
-          <input
-            type="text"
-            value={config.proxyUrl}
-            onChange={(e) => updateConfig('proxyUrl', e.target.value)}
-            disabled={processing}
-            placeholder="ws://localhost:55688"
-          />
-        </div>
+        <Button onClick={startProving} disabled={processing} className="w-full">
+          {processing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Shield className="mr-2 h-4 w-4" />
+              Start Proof of Reserves
+            </>
+          )}
+        </Button>
 
-        <div className="form-group">
-          <label>Target Server URL:</label>
-          <input
-            type="text"
-            value={config.targetUrl}
-            onChange={(e) => updateConfig('targetUrl', e.target.value)}
-            disabled={processing}
-            placeholder="http://127.0.0.1:8443/balance"
-          />
-        </div>
+        {status !== 'idle' && (
+          <Alert variant={status === 'error' ? 'destructive' : 'default'}>
+            <div className="flex items-start gap-2">
+              {processing && <Loader2 className="h-4 w-4 animate-spin mt-0.5" />}
+              {status === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />}
+              {status === 'error' && <XCircle className="h-4 w-4 mt-0.5" />}
+              <AlertDescription className="whitespace-pre-line flex-1">
+                {message}
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
 
-        <div className="form-group">
-          <label>Balance Threshold ($):</label>
-          <input
-            type="number"
-            value={config.threshold}
-            onChange={(e) => updateConfig('threshold', parseFloat(e.target.value) || 0)}
-            disabled={processing}
-            placeholder="10000"
-          />
-        </div>
-      </div>
-
-      <button onClick={startProving} disabled={processing}>
-        {processing ? 'Processing...' : '🚀 Start Proof of Reserves'}
-      </button>
-
-      {status !== 'idle' && (
-        <div className={`status ${status}`}>
-          {processing && <span className="spinner"></span>}
-          <div style={{ whiteSpace: 'pre-line' }}>{message}</div>
-        </div>
-      )}
-
-      {result && (
-        <div className="result-box">
+        {result && (
+          <Card className="bg-muted/50">
+            <CardContent className="pt-6">
+              <pre className="text-sm whitespace-pre-wrap font-mono">
 {`📊 PROOF OF RESERVES RESULT
 ${'='.repeat(50)}
 
@@ -259,9 +295,12 @@ ${result.accounts.map((acc: any, i: number) =>
 
 💾 Attestation saved by verifier to:
   /tmp/auditor_zk_attestation.json`}
-        </div>
-      )}
-    </div>
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -293,7 +332,6 @@ function parseBalanceResponse(recvBytes: Uint8Array): { balance: number; account
   console.log('📊 Parsed JSON:', data);
 
   // Handle Plaid /accounts/balance/get response
-  // Response format: { accounts: [...], item: {...}, request_id: "..." }
   if (!data.accounts || !Array.isArray(data.accounts)) {
     console.error('❌ Invalid response - missing accounts array:', data);
     throw new Error('Invalid Plaid response - see console for details');
@@ -316,11 +354,4 @@ function parseBalanceResponse(recvBytes: Uint8Array): { balance: number; account
   console.log(`📊 Accounts:`, accounts);
 
   return { balance: totalBalance, accounts };
-}
-
-// Mount app
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
 }

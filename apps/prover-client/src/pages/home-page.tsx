@@ -1,9 +1,11 @@
+import React from 'react'
 import { TokenizerView } from '@/components/tokenizer-view'
 import { BuyerView } from '@/components/buyer-view'
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Coins } from 'lucide-react'
 
-export default function Home() {
+export function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -23,7 +25,7 @@ export default function Home() {
             Asset Tokenization Platform
           </h1>
           <p className="text-pretty text-lg text-muted-foreground">
-            Tokenize real-world assets or purchase existing tokens securely
+            Tokenize real-world assets, purchase tokens, or verify reserves securely
           </p>
         </div>
 
@@ -44,6 +46,8 @@ export default function Home() {
           <TabsContent value="buyer" className="mt-6">
             <BuyerView />
           </TabsContent>
+
+
         </Tabs>
       </main>
 
