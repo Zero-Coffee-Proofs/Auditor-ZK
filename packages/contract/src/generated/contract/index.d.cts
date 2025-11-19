@@ -38,6 +38,7 @@ export type ImpureCircuits<T> = {
 export type PureCircuits = {
   publicKey(sk_0: Uint8Array): Uint8Array;
   nullify(sk_0: Uint8Array, salt_0: Uint8Array): Uint8Array;
+  debugCommitment(balance_0: bigint, blinder_0: Uint8Array): Uint8Array;
 }
 
 export type Circuits<T> = {
@@ -65,6 +66,9 @@ export type Circuits<T> = {
                                                                                            right: { bytes: Uint8Array
                                                                                                   }
                                                                                          }>;
+  debugCommitment(context: __compactRuntime.CircuitContext<T>,
+                  balance_0: bigint,
+                  blinder_0: Uint8Array): __compactRuntime.CircuitResults<T, Uint8Array>;
 }
 
 export type Ledger = {
@@ -78,7 +82,6 @@ export type Ledger = {
     lookup(key_0: Uint8Array): bigint;
     [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
   };
-  readonly expectedCoinType: Uint8Array;
   readonly pricePerToken: bigint;
   readonly issuerNullifier: Uint8Array;
 }
@@ -94,7 +97,6 @@ export declare class Contract<T, W extends Witnesses<T> = Witnesses<T>> {
   constructor(witnesses: W);
   initialState(context: __compactRuntime.ConstructorContext<T>,
                _tokenName_0: Uint8Array,
-               _coinType_0: Uint8Array,
                _pricePerToken_0: bigint): __compactRuntime.ConstructorResult<T>;
 }
 

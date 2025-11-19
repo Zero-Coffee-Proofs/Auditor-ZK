@@ -81,6 +81,9 @@ importers:
       '@midnight-ntwrk/midnight-js-node-zk-config-provider':
         specifier: ^2.0.2
         version: 2.0.2
+      '@midnight-ntwrk/midnight-js-testing':
+        specifier: ^2.0.2
+        version: 2.0.2
       '@midnight-ntwrk/midnight-js-types':
         specifier: ^2.0.2
         version: 2.0.2
@@ -1035,6 +1038,9 @@ packages:
 
   '@midnight-ntwrk/midnight-js-node-zk-config-provider@2.0.2':
     resolution: {integrity: sha512-naOs3sEi1XpBudZEZQQOlO6q830rFNIgXQmEOC5upY2l5CmIheHFZZWTqvTeap1qxawSR0LeJxWkSsf69AGxyg==}
+
+  '@midnight-ntwrk/midnight-js-testing@2.0.2':
+    resolution: {integrity: sha512-3Rt+xMAiOc6VjC4kt+IbNwcyElnhl+hmKDXrqUvhErFcoNiKP/PE8oCNOgbInGYELWVrNNwqU9kZrQXcmRHB9Q==}
 
   '@midnight-ntwrk/midnight-js-types@2.0.2':
     resolution: {integrity: sha512-ewHBQRCvY8u0+JAGdjQ86KsyoTA3dbNBLkuZ1o5U6vU/1jFjnFA1FL9skTgdXzSKjjfwA930i+OvbaUaUzFEHQ==}
@@ -6411,6 +6417,11 @@ snapshots:
 
   '@midnight-ntwrk/midnight-js-node-zk-config-provider@2.0.2':
     dependencies:
+      '@midnight-ntwrk/midnight-js-types': 2.0.2
+
+  '@midnight-ntwrk/midnight-js-testing@2.0.2':
+    dependencies:
+      '@midnight-ntwrk/midnight-js-network-id': 2.0.2
       '@midnight-ntwrk/midnight-js-types': 2.0.2
 
   '@midnight-ntwrk/midnight-js-types@2.0.2':

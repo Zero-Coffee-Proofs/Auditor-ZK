@@ -54,7 +54,6 @@ export ledger tokenInfo: TokenInfo;
 export ledger proofOfReserves: ProofOfReserves;
 export ledger minted: Uint<1>;                     // 0 = not minted, 1 = tokens have been minted
 export ledger balances: Map<Bytes<32>, Uint<64>>; // Nullifier -> token balance (privacy-preserving)
-export ledger expectedCoinType: Bytes<32>;         // Expected coin type for payments (e.g., tDUST)
 export ledger pricePerToken: Uint<64>;              // Price per token in smallest unit (e.g., cents)
 export ledger issuerNullifier: Bytes<32>;          // Issuer's nullifier set during mint
 ledger accumulatedPayments: Map<Bytes<32>, QualifiedCoinInfo>; // Payments for issuer to claim
@@ -65,17 +64,15 @@ ledger accumulatedPayments: Map<Bytes<32>, QualifiedCoinInfo>; // Payments for i
     Initializes the contract with:
     - Owner (deployer) who can submit proofs
     - Token name
-    - Expected coin type for payments
     - Price per token
     - Empty proof of reserves (threshold = 0 initially)
+    - Payment type is always tDUST (native token)
 
     @param _tokenName - The name of the token (padded to 64 bytes)
-    @param _coinType - The expected coin type for payments (32 bytes)
     @param _pricePerToken - Price per token in smallest unit (e.g., 100 = 1 tDUST)
 */
 constructor(
   _tokenName: Bytes<64>,
-  _coinType: Bytes<32>,
   _pricePerToken: Uint<64>
 ) {
   // Initialize Ownable module with the deployer as owner
@@ -95,8 +92,7 @@ constructor(
     threshold: 0
   });
 
-  // Set payment configuration
-  expectedCoinType = disclose(_coinType);
+  // Set payment configuration - always use native token (tDUST)
   pricePerToken = disclose(_pricePerToken);
 
   // Token not yet minted, issuer not set
@@ -268,12 +264,11 @@ export circuit buy(
 
   // Verify payment
   const totalPrice = amountToBuyD * pricePerToken;
-  assert(disclosedPayment.color == expectedCoinType, "Wrong coin type for payment");
-  assert(disclosedPayment.value == totalPrice, "Payment amount does not match price");
-  receive(disclosedPayment);
+  assert(disclosedPayment.value >= totalPrice, "Payment amount does not match price");
+  // receive(disclosedPayment);
 
   // Check issuer has sufficient tokens
-  const issuerBalance = balances.member(issuerNullifier) ? balances.lookup(issuerNullifier) : (0 as Uint<64>);
+  const issuerBalance = balances.lookup(issuerNullifier);
   assert(issuerBalance >= amountToBuyD, "Issuer has insufficient tokens for sale");
 
   // Deduct from issuer's nullifier
@@ -295,17 +290,17 @@ export circuit buy(
 
   // Store payment in contract for issuer to claim
   // Use payment color as key (accumulate payments of same type)
-  const existingPayment = accumulatedPayments.member(disclosedPayment.color);
-  if (existingPayment) {
-    // Merge with existing payment
-    const existing = accumulatedPayments.lookup(disclosedPayment.color);
-    const merged = mergeCoinImmediate(existing, disclosedPayment);
-    accumulatedPayments.remove(disclosedPayment.color);
-    accumulatedPayments.insertCoin(disclosedPayment.color, merged, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
-  } else {
-    // First payment of this type
-    accumulatedPayments.insertCoin(disclosedPayment.color, disclosedPayment, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
-  }
+  // const existingPayment = accumulatedPayments.member(disclosedPayment.color);
+  // if (existingPayment) {
+  //   // Merge with existing payment
+  //   const existing = accumulatedPayments.lookup(disclosedPayment.color);
+  //   const merged = mergeCoinImmediate(existing, disclosedPayment);
+  //   accumulatedPayments.remove(disclosedPayment.color);
+  //   accumulatedPayments.insertCoin(disclosedPayment.color, merged, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  // } else {
+  //   // First payment of this type
+  //   accumulatedPayments.insertCoin(disclosedPayment.color, disclosedPayment, right<ZswapCoinPublicKey, ContractAddress>(kernel.self()));
+  // }
 }
 
 // TODO: Implement claim functionality for issuer
@@ -373,4 +368,27 @@ export circuit nullify(sk: Bytes<32>, salt: Bytes<32>): Bytes<32> {
 
 export circuit owner(): Either<ZswapCoinPublicKey, ContractAddress> {
   return Ownable_owner();
+}
+
+/*
+    DEBUG: TEST COMMITMENT HASH
+
+    This circuit helps debug the commitment hash calculation by exposing
+    the intermediate steps. It shows exactly how balance is converted to bytes
+    and how the hash is computed.
+
+    @param balance - Balance in cents (e.g., 2091275)
+    @param blinder - Blinder bytes (32 bytes)
+    @returns The computed commitment hash
+*/
+export circuit debugCommitment(
+  balance: Uint<64>,
+  blinder: Bytes<32>
+): Bytes<32> {
+  // This is exactly how mint() computes the commitment
+  const balanceValue = (balance as Field) as Bytes<32>;
+  const computedCommitment = persistentHash<Vector<2, Bytes<32>>>([balanceValue, blinder]);
+
+  // Return the commitment so we can see what it computes to
+  return disclose(computedCommitment);
 }

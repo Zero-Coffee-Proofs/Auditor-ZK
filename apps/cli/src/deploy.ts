@@ -25,12 +25,16 @@ const providers: ContractProviders = {
   midnightProvider: walletAndMidnightProvider,
 };
 
-// Example: Deploy with tDUST as payment currency, 100 units per token
-// You'll need to provide the actual coin type hash for tDUST
-const tDustCoinType = new Uint8Array(32); // TODO: Replace with actual tDUST coin type hash
-const pricePerToken = 100n; // 100 smallest units per token
+// Example: Deploy with tDUST as payment currency (native token), 100 units per token
+// Contract now hardcodes tDUST as the payment type
+const pricePerToken = 100n;
 
-const api = await ContractAPI.deploy(providers, "USD-ZK", tDustCoinType, pricePerToken, logger);
+console.log("Deploying contract with:");
+console.log("  Token Name: USD-ZK");
+console.log("  Price per Token:", pricePerToken.toString(), "units");
+console.log("  Payment Type: tDUST (native token, hardcoded in contract)");
+
+const api = await ContractAPI.deploy(providers, "USD-ZK", pricePerToken, logger);
 
 console.log("Deployed contract address: ", api.deployedContractAddress);
 

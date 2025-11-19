@@ -87,7 +87,6 @@ export type ContractProviders = MidnightProviders<
 export type DeployedContractContract = FoundContract<ContractContract>;
 
 export type ContractDerivedState = {
-  readonly owner: any;
   readonly tokenInfo: TokenInfo;
   readonly proofOfReserves: ProofOfReserves;
   readonly minted: bigint;

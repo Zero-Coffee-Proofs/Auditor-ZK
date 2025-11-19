@@ -227,6 +227,30 @@
           }
         ]
       }
+    },
+    {
+      "name": "debugCommitment",
+      "pure": true,
+      "arguments": [
+        {
+          "name": "balance",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "blinder",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Bytes",
+        "length": 32
+      }
     }
   ],
   "witnesses": [
